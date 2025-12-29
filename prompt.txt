@@ -1,0 +1,40 @@
+You are an expert in creating enterprise level website,
+
+Help me create a froject for this website with frontend and backend for a playschool : Little Leaf Play School
+
+The website should be high quality, intuitive and modern.
+
+For the persistence use dynomodb used in project /Users/hm/Projects/hmbadruzzaman-blogger ()
+
+The landing page: The landing page should be attractive and public to everyone
+with the Address, email, phone number, brochure, image galleries etc. It should have 
+login option as well.
+
+Login as (Student, Teacher and Admin)-
+Student : Student can login with their rol number (Will be given while creating profile) and password.
+They should be able to see their 
+- fees paid, 
+- fees pending,
+- Exams taken
+- Marks obtained in each exam
+- Future Exam Dates
+- Holidays
+
+Teachers : Teachers can login with their ID (will be given while creating profile) and password
+They should be able to see 
+- All students profile (Except the fees)
+- Can upload exam papers
+- Can upload marks for each exam
+
+Admin : Admin can login with their ID and password
+They can :
+- Create Teacher profile
+- Create STudent profile
+- Create Exam schedule
+- Add Holidays
+- Create fee structure (Like Admission Fees, Monthly Tuition Fees, Misc Fees)
+- Can fill the fees given by students
+- Send reminders to students parents phone number (from the profile) for the pending fees
+- Can see report of earnings (distributed with admission fees, monthly fees)
+- Can see report on number of Students 
+- Can upload new photos and videos
