@@ -69,13 +69,13 @@ async function seedDummyData() {
         const schoolInfo = {
             infoId: 'INFO#SCHOOL',
             schoolName: 'Little Leaf Play School',
-            address: '123 Green Park Avenue, Education District, Mumbai, Maharashtra - 400001',
-            phone: '+91-22-12345678',
+            address: 'Malda, Kaliachak, India, 732201',
+            phone: '+91 94763 74336',
             email: 'info@littleleafplayschool.com',
             website: 'www.littleleafplayschool.com',
             brochureUrl: 'https://example.com/brochure.pdf',
-            principalName: 'Dr. Meera Krishnan',
-            foundedYear: 2015,
+            principalName: 'Mr. H M Kamruzzaman',
+            foundedYear: 2022,
             socialMedia: {
                 facebook: 'facebook.com/littleleafplayschool',
                 instagram: 'instagram.com/littleleafplayschool',
@@ -430,27 +430,60 @@ async function seedDummyData() {
         }
         console.log('');
 
-        // 10. Create Sample Media
-        console.log('🔟 Creating Media Gallery...');
-        const mediaItems = [
-            { title: 'Annual Day 2023', type: 'PHOTO', date: '2023-12-15' },
-            { title: 'Sports Day Highlights', type: 'PHOTO', date: '2024-01-20' },
-            { title: 'Classroom Activities', type: 'PHOTO', date: '2024-02-10' },
-            { title: 'Student Performances', type: 'VIDEO', date: '2024-03-05' }
+        // 10. Create Sample Media (24 Gallery Images)
+        console.log('🔟 Creating Media Gallery (24 Images)...');
+
+        // TODO: Replace with your actual S3 bucket name
+         // S3 Configuration
+        const S3_BUCKET = 'little-leaf';
+        const S3_REGION = 'us-east-1';
+        const S3_FOLDER = 'little-leaf';
+
+        // TODO: Replace with your actual image filenames
+        const galleryImages = [
+            { filename: '482024118_641595932159568_5057828958709864332_n.jpg', title: 'Outdoor Play' },
+            { filename: '488752846_666332839685877_5100881528460968927_n.jpg', title: 'Art & Craft' },
+            { filename: '484647213_651967004455794_4891236331672288565_n.jpg', title: 'Music Class' },
+            { filename: '482984368_647811638204664_1809616828097242959_n.jpg', title: 'Story Time' },
+            { filename: '488860886_664489939870167_159869527106278868_n.jpg', title: 'Story Time' },
+            { filename: '490284491_669740879345073_9063446704213731051_n.jpg', title: 'Writing Skills' },
+            { filename: '498309359_698098083176019_4017212811704935595_n.jpg', title: 'Domino' },
+            { filename: '575190124_847507738235052_2787003247675754461_n.jpg', title: 'Rock Climbing' },
+            { filename: '577903510_847507661568393_6775151365504001435_n.jpg', title: 'Group Dance Time' },
+            { filename: '588475239_864989829820176_583014678143335712_n.jpg', title: 'Game  Area' },
+            { filename: '592899669_867235886262237_923506011769211655_n.jpg', title: 'Classroom' },
+            { filename: '602014317_884987594487066_3264841948914476975_n.jpg', title: 'Group Activities' },
+            { filename: '603782486_885845691067923_1104201118693561420_n.jpg', title: 'Yoga Session' },
+            { filename: '582550974_854473637538462_2507455706788861389_n.jpg', title: 'Childrens day' },
+            { filename: '533479426_775449852107508_6948868573039885579_n.jpg', title: 'Parents Visit' },
+            { filename: '601976384_885845464401279_3542587321312513996_n.jpg', title: 'Drawing Class' },
+            { filename: '604857421_885845797734579_8726563804733123317_n.jpg', title: 'Yoga Time' },
+            { filename: '604648124_884987614487064_9086156736868569873_n.jpg', title: 'Annual Exam' },
+            { filename: '592912116_868691749449984_3775227078397141494_n.jpg', title: 'Exercise' },
+            { filename: '485080811_652731681045993_6873199319137558940_n.jpg', title: 'Cultural Program' },
+            { filename: '601995981_884987557820403_7883252298860521952_n.jpg', title: 'Exam Time' },
+            { filename: '581161430_854473690871790_3546726727841191247_n.jpg', title: 'Celebration Day' },
+            { filename: '482322154_642774428708385_4231052374425887625_n.jpg', title: 'Graduation Day' }
         ];
 
-        for (const media of mediaItems) {
+        for (let i = 0; i < galleryImages.length; i++) {
+            const { filename, title } = galleryImages[i];
             const mediaId = `MEDIA#${uuidv4()}`;
+            const s3Url = `https://${S3_BUCKET}.s3.${S3_REGION}.amazonaws.com/${S3_FOLDER}/${filename}`;
+
             const mediaRecord = {
                 mediaId,
-                mediaType: media.type,
-                title: media.title,
-                description: `${media.title} - Little Leaf Play School`,
-                s3Url: `https://s3.example.com/littleleaf/media/${mediaId}.jpg`,
-                thumbnailUrl: `https://s3.example.com/littleleaf/thumbnails/${mediaId}_thumb.jpg`,
-                uploadDate: media.date,
+                mediaType: 'PHOTO',
+                title,
+                description: `${title} - Little Leaf Play School`,
+                s3Url,
+                thumbnailUrl: s3Url, // Same as original for now
+                s3Key: filename,
+                s3Bucket: S3_BUCKET,
+                uploadDate: new Date(2024, i % 12, (i % 28) + 1).toISOString(),
                 uploadedBy: adminId,
-                tags: ['school', 'events', '2024'],
+                category: 'GENERAL',
+                tags: ['school', 'gallery', '2024'],
                 isPublic: true,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString()
@@ -461,7 +494,103 @@ async function seedDummyData() {
                 Item: mediaRecord
             }).promise();
 
-            console.log(`   ✓ Media: ${media.title} (${media.type})`);
+            console.log(`   ✓ Gallery Image ${i + 1}: ${title}`);
+        }
+        console.log('');
+
+        // 11. Create Sample Inquiries
+        console.log('1️⃣1️⃣  Creating Sample Inquiries...');
+
+        const sampleInquiries = [
+            {
+                parentName: 'Rajesh Kumar',
+                email: 'rajesh.kumar@example.com',
+                phone: '+91 9876543210',
+                studentName: 'Ananya Kumar',
+                studentAge: 3,
+                preferredClass: 'NURSERY',
+                inquiry: 'I would like to know more about the admission process and fee structure for Nursery class. My daughter will turn 3 next month. What documents are required?',
+                status: 'NEW',
+                daysAgo: 2
+            },
+            {
+                parentName: 'Priya Mehta',
+                email: 'priya.mehta@example.com',
+                phone: '+91 9123456789',
+                studentName: 'Arjun Mehta',
+                studentAge: 4,
+                preferredClass: 'LKG',
+                inquiry: 'We recently moved to the area and are looking for a good playschool. Could you please share information about your curriculum, teacher-student ratio, and school timings?',
+                status: 'NEW',
+                daysAgo: 1
+            },
+            {
+                parentName: 'Amit Verma',
+                email: 'amit.verma@example.com',
+                phone: '+91 9988776655',
+                studentName: 'Ishaan Verma',
+                studentAge: 5,
+                preferredClass: 'UKG',
+                inquiry: 'My son is currently in LKG at another school. We are interested in transferring him to UKG here. Is mid-year admission possible? Also, do you provide transportation facility?',
+                status: 'NEW',
+                daysAgo: 0
+            },
+            {
+                parentName: 'Sneha Desai',
+                email: 'sneha.desai@example.com',
+                phone: '+91 9765432108',
+                studentName: 'Diya Desai',
+                studentAge: 2,
+                preferredClass: 'PRE-NURSERY',
+                inquiry: 'My daughter will turn 3 in June. When does the admission process start for the next academic year? What is the age cutoff date?',
+                status: 'FOLLOWED_UP',
+                daysAgo: 7,
+                followedUp: 5
+            },
+            {
+                parentName: 'Vikram Singh',
+                email: 'vikram.singh@example.com',
+                phone: '+91 9554433221',
+                studentName: 'Kavya Singh',
+                studentAge: 4,
+                preferredClass: 'LKG',
+                inquiry: 'We visited your school last week and were impressed by the facilities. Could you please send me the admission form and fee details? We would like to enroll our daughter for the upcoming session.',
+                status: 'FOLLOWED_UP',
+                daysAgo: 10,
+                followedUp: 8
+            }
+        ];
+
+        for (const inq of sampleInquiries) {
+            const inquiryId = `INQ#${Date.now() - (inq.daysAgo * 24 * 60 * 60 * 1000)}`;
+            const submittedAt = new Date(Date.now() - (inq.daysAgo * 24 * 60 * 60 * 1000)).toISOString();
+            const followedUpAt = inq.followedUp
+                ? new Date(Date.now() - (inq.followedUp * 24 * 60 * 60 * 1000)).toISOString()
+                : null;
+
+            const inquiryData = {
+                inquiryId,
+                parentName: inq.parentName,
+                email: inq.email,
+                phone: inq.phone,
+                studentName: inq.studentName,
+                studentAge: inq.studentAge,
+                preferredClass: inq.preferredClass,
+                inquiry: inq.inquiry,
+                status: inq.status,
+                submittedAt,
+                followedUpAt,
+                createdAt: submittedAt,
+                updatedAt: followedUpAt || submittedAt
+            };
+
+            await docClient.put({
+                TableName: TABLES.INQUIRIES,
+                Item: inquiryData
+            }).promise();
+
+            const statusIcon = inq.status === 'NEW' ? '🆕' : '✅';
+            console.log(`   ${statusIcon} Inquiry from ${inq.parentName} (${inq.status})`);
         }
         console.log('');
 
@@ -475,8 +604,9 @@ async function seedDummyData() {
         console.log(`   • Exams: ${createdExams.length}`);
         console.log(`   • Exam Results: ${resultCount}`);
         console.log(`   • Holidays: ${holidays.length}`);
-        console.log(`   • Media Items: ${mediaItems.length}`);
+        console.log(`   • Gallery Images: ${galleryImages.length}`);
         console.log(`   • Fee Structures: ${feeStructures.length}`);
+        console.log(`   • Inquiries: ${sampleInquiries.length} (3 pending, 2 followed up)`);
         console.log('');
         console.log('🔑 Login Credentials (All passwords: password123):');
         console.log('');

@@ -28,7 +28,8 @@ if (process.env.USE_LOCAL_DB === 'true') {
         HOLIDAYS: 'LittleLeaf_Holidays',
         MEDIA: 'LittleLeaf_Media',
         SCHOOL_INFO: 'LittleLeaf_SchoolInfo',
-        NOTIFICATIONS: 'LittleLeaf_Notifications'
+        NOTIFICATIONS: 'LittleLeaf_Notifications',
+        INQUIRIES: 'LittleLeaf_Inquiries'
     };
 
     module.exports = {

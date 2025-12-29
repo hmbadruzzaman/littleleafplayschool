@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { publicAPI } from '../services/api';
+import InquiryForm from '../components/forms/InquiryForm';
 import './LandingPage.css';
 
 function LandingPage() {
     const [schoolInfo, setSchoolInfo] = useState(null);
     const [gallery, setGallery] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [showInquiryForm, setShowInquiryForm] = useState(false);
 
     useEffect(() => {
         fetchData();
@@ -20,7 +22,7 @@ function LandingPage() {
             ]);
 
             setSchoolInfo(infoRes.data.data);
-            setGallery(galleryRes.data.data.slice(0, 6));
+            setGallery(galleryRes.data.data); // Show all gallery images
         } catch (error) {
             console.error('Error fetching data:', error);
         } finally {
@@ -50,7 +52,9 @@ function LandingPage() {
                     <div className="hero-content">
                         <h2>Welcome to {schoolInfo?.schoolName || 'Little Leaf Play School'}</h2>
                         <p>Nurturing young minds for a bright future</p>
-                        <Link to="/login" className="btn btn-primary btn-lg">Get Started</Link>
+                        <button onClick={() => setShowInquiryForm(true)} className="btn btn-primary btn-lg">
+                            Get Started
+                        </button>
                     </div>
                 </div>
             </section>
@@ -134,6 +138,11 @@ function LandingPage() {
                     <p>&copy; {new Date().getFullYear()} {schoolInfo?.schoolName || 'Little Leaf Play School'}. All rights reserved.</p>
                 </div>
             </footer>
+
+            {/* Inquiry Form Modal */}
+            {showInquiryForm && (
+                <InquiryForm onClose={() => setShowInquiryForm(false)} />
+            )}
         </div>
     );
 }

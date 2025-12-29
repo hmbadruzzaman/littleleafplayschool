@@ -433,3 +433,57 @@ exports.getExpenditureReport = async (req, res) => {
         res.status(500).json(errorResponse('Failed to generate expenditure report', error));
     }
 };
+
+// Get all inquiries
+exports.getAllInquiries = async (req, res) => {
+    try {
+        const result = await docClient.scan({
+            TableName: TABLES.INQUIRIES
+        }).promise();
+
+        // Sort by submission date (newest first)
+        const sortedInquiries = (result.Items || []).sort((a, b) =>
+            new Date(b.submittedAt) - new Date(a.submittedAt)
+        );
+
+        res.status(200).json(successResponse(sortedInquiries, 'Inquiries retrieved successfully'));
+    } catch (error) {
+        console.error('Get inquiries error:', error);
+        res.status(500).json(errorResponse('Failed to retrieve inquiries', error));
+    }
+};
+
+// Update inquiry status
+exports.updateInquiryStatus = async (req, res) => {
+    try {
+        const { inquiryId } = req.params;
+        const { status } = req.body;
+
+        if (!['NEW', 'FOLLOWED_UP', 'ENROLLED', 'REJECTED'].includes(status)) {
+            return res.status(400).json(errorResponse('Invalid status'));
+        }
+
+        const updateExpression = 'SET #status = :status, followedUpAt = :followedUpAt, updatedAt = :updatedAt';
+        const expressionAttributeNames = {
+            '#status': 'status'
+        };
+        const expressionAttributeValues = {
+            ':status': status,
+            ':followedUpAt': status === 'FOLLOWED_UP' ? new Date().toISOString() : null,
+            ':updatedAt': new Date().toISOString()
+        };
+
+        await docClient.update({
+            TableName: TABLES.INQUIRIES,
+            Key: { inquiryId },
+            UpdateExpression: updateExpression,
+            ExpressionAttributeNames: expressionAttributeNames,
+            ExpressionAttributeValues: expressionAttributeValues
+        }).promise();
+
+        res.status(200).json(successResponse(null, 'Inquiry status updated successfully'));
+    } catch (error) {
+        console.error('Update inquiry status error:', error);
+        res.status(500).json(errorResponse('Failed to update inquiry status', error));
+    }
+};

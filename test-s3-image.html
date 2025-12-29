@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>S3 Image Test</title>
+</head>
+<body>
+    <h1>S3 Image Test</h1>
+    
+    <h2>Test 1: Direct IMG tag</h2>
+    <img src="https://little-leaf.s3.us-east-1.amazonaws.com/little-leaf/482024118_641595932159568_5057828958709864332_n.jpg" 
+         alt="Test Image" 
+         style="max-width: 500px;" 
+         onload="console.log('✅ Image loaded successfully')"
+         onerror="console.error('❌ Image failed to load')">
+    
+    <h2>Test 2: Fetch API (CORS test)</h2>
+    <button onclick="testFetch()">Test Fetch</button>
+    <div id="result"></div>
+    
+    <script>
+        async function testFetch() {
+            const url = 'https://little-leaf.s3.us-east-1.amazonaws.com/little-leaf/482024118_641595932159568_5057828958709864332_n.jpg';
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                const response = await fetch(url);
+                if (response.ok) {
+                    resultDiv.innerHTML = '<p style="color: green;">✅ Fetch successful! CORS is working.</p>';
+                    console.log('Response headers:', response.headers);
+                } else {
+                    resultDiv.innerHTML = `<p style="color: red;">❌ Fetch failed: ${response.status} ${response.statusText}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: red;">❌ Error: ${error.message}</p>`;
+                console.error('Fetch error:', error);
+            }
+        }
+    </script>
+</body>
+</html>

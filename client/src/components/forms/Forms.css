@@ -178,3 +178,46 @@
         font-size: 1.25rem;
     }
 }
+
+/* Inquiry Modal Specific Styles */
+.inquiry-modal {
+    max-width: 700px;
+}
+
+.inquiry-modal .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.inquiry-modal textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.message {
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    font-size: 14px;
+}
+
+.message.success {
+    background-color: #d1fae5;
+    color: #065f46;
+    border: 1px solid #6ee7b7;
+}
+
+.message.error {
+    background-color: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+}
+
+@media (max-width: 768px) {
+    .inquiry-modal .form-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+}

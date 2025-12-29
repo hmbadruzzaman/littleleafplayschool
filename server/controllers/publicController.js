@@ -96,3 +96,66 @@ exports.submitContactForm = async (req, res) => {
         res.status(500).json(errorResponse('Failed to submit contact form', error));
     }
 };
+
+// Submit admission inquiry
+exports.submitInquiry = async (req, res) => {
+    try {
+        const { parentName, email, phone, studentName, studentAge, inquiry, preferredClass } = req.body;
+
+        // Validation
+        if (!parentName || !email || !phone || !studentName || !studentAge || !inquiry) {
+            return res.status(400).json(errorResponse('All required fields must be filled'));
+        }
+
+        // Email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json(errorResponse('Invalid email format'));
+        }
+
+        // Phone validation (basic)
+        if (phone.length < 10) {
+            return res.status(400).json(errorResponse('Invalid phone number'));
+        }
+
+        // Age validation
+        const age = parseInt(studentAge);
+        if (age < 1 || age > 10) {
+            return res.status(400).json(errorResponse('Student age must be between 1 and 10 years'));
+        }
+
+        // Store inquiry data
+        const inquiryData = {
+            inquiryId: `INQ#${Date.now()}`,
+            parentName,
+            email,
+            phone,
+            studentName,
+            studentAge: age,
+            inquiry,
+            preferredClass: preferredClass || 'Not specified',
+            status: 'NEW',
+            submittedAt: new Date().toISOString()
+        };
+
+        // Store in database
+        await docClient.put({
+            TableName: TABLES.INQUIRIES || 'inquiries',
+            Item: inquiryData
+        }).promise();
+
+        // Log for debugging
+        console.log('New admission inquiry received:', inquiryData);
+
+        // TODO: Send email notification to admin
+        // You can integrate with AWS SES, SendGrid, or other email service
+
+        res.status(200).json(successResponse(
+            null,
+            'Thank you for your interest! We will contact you within 24-48 hours.'
+        ));
+    } catch (error) {
+        console.error('Submit inquiry error:', error);
+        res.status(500).json(errorResponse('Failed to submit inquiry. Please try again.', error));
+    }
+};

@@ -104,7 +104,11 @@ export const adminAPI = {
 
     // School Info
     getSchoolInfo: () => api.get('/admin/school-info'),
-    updateSchoolInfo: (updates) => api.put('/admin/school-info', updates)
+    updateSchoolInfo: (updates) => api.put('/admin/school-info', updates),
+
+    // Inquiries
+    getAllInquiries: () => api.get('/admin/inquiries'),
+    updateInquiryStatus: (inquiryId, status) => api.put(`/admin/inquiries/${inquiryId}/status`, { status })
 };
 
 export default api;

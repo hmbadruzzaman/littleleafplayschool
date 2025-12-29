@@ -8,6 +8,7 @@ import AddHolidayForm from '../components/forms/AddHolidayForm';
 import RecordFeePaymentForm from '../components/forms/RecordFeePaymentForm';
 import AddExpenditureForm from '../components/forms/AddExpenditureForm';
 import StudentDetailsModal from '../components/modals/StudentDetailsModal';
+import ViewInquiriesModal from '../components/modals/ViewInquiriesModal';
 import './Dashboard.css';
 
 function AdminDashboard() {
@@ -26,6 +27,8 @@ function AdminDashboard() {
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [timePeriod, setTimePeriod] = useState('current-year');
     const [studentSearchTerm, setStudentSearchTerm] = useState('');
+    const [showInquiries, setShowInquiries] = useState(false);
+    const [pendingInquiriesCount, setPendingInquiriesCount] = useState(0);
 
     useEffect(() => {
         fetchData();
@@ -67,7 +70,7 @@ function AdminDashboard() {
         try {
             const { startDate, endDate } = getDateRange();
 
-            const [studentsRes, teachersRes, studentReportRes, earningsRes, expenditureRes] = await Promise.all([
+            const [studentsRes, teachersRes, studentReportRes, earningsRes, expenditureRes, inquiriesRes] = await Promise.all([
                 adminAPI.getAllStudents(),
                 adminAPI.getAllTeachers(),
                 adminAPI.getStudentCountReport(),
@@ -76,7 +79,8 @@ function AdminDashboard() {
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('token')}`
                     }
-                }).then(res => res.json())
+                }).then(res => res.json()),
+                adminAPI.getAllInquiries()
             ]);
 
             setStudents(studentsRes.data.data);
@@ -86,6 +90,10 @@ function AdminDashboard() {
                 earnings: earningsRes.data.data,
                 expenditure: expenditureRes.data
             });
+
+            // Count pending inquiries
+            const pendingCount = (inquiriesRes.data.data || []).filter(inq => inq.status === 'NEW').length;
+            setPendingInquiriesCount(pendingCount);
         } catch (error) {
             console.error('Error fetching data:', error);
         } finally {
@@ -133,6 +141,15 @@ function AdminDashboard() {
                         onClick={() => setActiveTab('reports')}
                     >
                         Reports
+                    </button>
+                    <button
+                        className={`tab ${activeTab === 'inquiries' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('inquiries')}
+                    >
+                        Inquiries
+                        {pendingInquiriesCount > 0 && (
+                            <span className="badge">{pendingInquiriesCount}</span>
+                        )}
                     </button>
                 </div>
 
@@ -380,6 +397,26 @@ function AdminDashboard() {
                         </div>
                     </>
                 )}
+
+                {activeTab === 'inquiries' && (
+                    <div className="card">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                            <h2 style={{ margin: 0 }}>Admission Inquiries</h2>
+                            <button
+                                className="btn btn-primary"
+                                onClick={() => setShowInquiries(true)}
+                            >
+                                View All Inquiries
+                            </button>
+                        </div>
+                        <p style={{ color: '#6b7280', marginTop: 0 }}>
+                            {pendingInquiriesCount > 0
+                                ? `You have ${pendingInquiriesCount} pending ${pendingInquiriesCount === 1 ? 'inquiry' : 'inquiries'} awaiting follow-up.`
+                                : 'All inquiries have been followed up.'
+                            }
+                        </p>
+                    </div>
+                )}
             </div>
 
             {/* Modals */}
@@ -424,6 +461,14 @@ function AdminDashboard() {
                     student={selectedStudent}
                     onClose={() => setSelectedStudent(null)}
                     onUpdate={fetchData}
+                />
+            )}
+            {showInquiries && (
+                <ViewInquiriesModal
+                    onClose={() => {
+                        setShowInquiries(false);
+                        fetchData(); // Refresh to update pending count
+                    }}
                 />
             )}
         </div>

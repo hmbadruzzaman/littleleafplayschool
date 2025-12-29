@@ -7,5 +7,6 @@ router.get('/school-info', publicController.getSchoolInfo);
 router.get('/gallery', publicController.getMediaGallery);
 router.get('/holidays', publicController.getUpcomingHolidays);
 router.post('/contact', publicController.submitContactForm);
+router.post('/inquiry', publicController.submitInquiry);
 
 module.exports = router;

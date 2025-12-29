@@ -43,4 +43,8 @@ router.get('/reports/students', adminController.getStudentCountReport);
 router.get('/school-info', adminController.getSchoolInfo);
 router.put('/school-info', adminController.updateSchoolInfo);
 
+// Inquiries
+router.get('/inquiries', adminController.getAllInquiries);
+router.put('/inquiries/:inquiryId/status', adminController.updateInquiryStatus);
+
 module.exports = router;

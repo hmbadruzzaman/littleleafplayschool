@@ -13,7 +13,8 @@ const inMemoryDB = {
     media: new Map(),
     schoolInfo: new Map(),
     notifications: new Map(),
-    expenditures: new Map()
+    expenditures: new Map(),
+    inquiries: new Map()
 };
 
 // Table name mapping
@@ -29,7 +30,8 @@ const TABLES = {
     MEDIA: 'media',
     SCHOOL_INFO: 'schoolInfo',
     NOTIFICATIONS: 'notifications',
-    EXPENDITURES: 'expenditures'
+    EXPENDITURES: 'expenditures',
+    INQUIRIES: 'inquiries'
 };
 
 // Simulated DynamoDB DocumentClient
@@ -54,6 +56,7 @@ class LocalDocClient {
                 else if (item.infoId) key = item.infoId;
                 else if (item.notificationId) key = item.notificationId;
                 else if (item.expenditureId) key = item.expenditureId;
+                else if (item.inquiryId) key = item.inquiryId;
 
                 table.set(key, item);
                 return { Attributes: item };
