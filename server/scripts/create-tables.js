@@ -237,6 +237,29 @@ const tableDefinitions = [
             }
         ],
         ProvisionedThroughput: { ReadCapacityUnits: 5, WriteCapacityUnits: 5 }
+    },
+    {
+        TableName: TABLES.INQUIRIES,
+        KeySchema: [
+            { AttributeName: 'inquiryId', KeyType: 'HASH' }
+        ],
+        AttributeDefinitions: [
+            { AttributeName: 'inquiryId', AttributeType: 'S' },
+            { AttributeName: 'status', AttributeType: 'S' },
+            { AttributeName: 'submittedAt', AttributeType: 'S' }
+        ],
+        GlobalSecondaryIndexes: [
+            {
+                IndexName: 'status-submittedAt-index',
+                KeySchema: [
+                    { AttributeName: 'status', KeyType: 'HASH' },
+                    { AttributeName: 'submittedAt', KeyType: 'RANGE' }
+                ],
+                Projection: { ProjectionType: 'ALL' },
+                ProvisionedThroughput: { ReadCapacityUnits: 5, WriteCapacityUnits: 5 }
+            }
+        ],
+        ProvisionedThroughput: { ReadCapacityUnits: 5, WriteCapacityUnits: 5 }
     }
 ];
 
