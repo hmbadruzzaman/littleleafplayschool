@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import './Forms.css';
 
+const API_URL = 'https://welittleleaf.com/api';
+
 function InquiryForm({ onClose }) {
     const [formData, setFormData] = useState({
         parentName: '',
@@ -27,7 +29,7 @@ function InquiryForm({ onClose }) {
         setMessage({ type: '', text: '' });
 
         try {
-            const response = await fetch('http://localhost:5001/api/public/inquiry', {
+            const response = await fetch(`${API_URL}/public/inquiry`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

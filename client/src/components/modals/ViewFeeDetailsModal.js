@@ -20,7 +20,7 @@ function ViewFeeDetailsModal({ student, onClose }) {
 
             const token = localStorage.getItem('token');
             const encodedStudentId = encodeURIComponent(student.studentId);
-            const response = await fetch(`http://localhost:5001/api/admin/students/${encodedStudentId}/fees`, {
+            const response = await fetch(`https://welittleleaf.com/api/admin/students/${encodedStudentId}/fees`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }

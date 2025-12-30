@@ -31,7 +31,7 @@ function EditStudentForm({ student, onClose, onSuccess }) {
 
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch(`http://localhost:5001/api/admin/students/${student.studentId}`, {
+            const response = await fetch(`https://welittleleaf.com/api/admin/students/${student.studentId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

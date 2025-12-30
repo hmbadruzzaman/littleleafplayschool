@@ -26,7 +26,7 @@ function AddHolidayForm({ onClose, onSuccess }) {
 
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5001/api/admin/holidays', {
+            const response = await fetch('https://welittleleaf.com/api/admin/holidays', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

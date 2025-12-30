@@ -75,7 +75,7 @@ function AdminDashboard() {
                 adminAPI.getAllTeachers(),
                 adminAPI.getStudentCountReport(),
                 adminAPI.getEarningsReport(startDate, endDate),
-                fetch(`http://localhost:5001/api/admin/reports/expenditure?startDate=${startDate}&endDate=${endDate}`, {
+                fetch(`https://welittleleaf.com/api/admin/reports/expenditure?startDate=${startDate}&endDate=${endDate}`, {
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('token')}`
                     }

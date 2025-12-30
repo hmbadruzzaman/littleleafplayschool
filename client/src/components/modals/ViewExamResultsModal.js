@@ -18,7 +18,7 @@ function ViewExamResultsModal({ student, onClose }) {
             const token = localStorage.getItem('token');
 
             // Fetch exams for the student's class
-            const examsResponse = await fetch(`http://localhost:5001/api/admin/exams?class=${encodeURIComponent(student.class)}`, {
+            const examsResponse = await fetch(`https://welittleleaf.com/api/admin/exams?class=${encodeURIComponent(student.class)}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -26,7 +26,7 @@ function ViewExamResultsModal({ student, onClose }) {
             const examsData = await examsResponse.json();
 
             // Fetch marks for this student
-            const marksResponse = await fetch(`http://localhost:5001/api/teacher/marks/${encodeURIComponent(student.studentId)}`, {
+            const marksResponse = await fetch(`https://welittleleaf.com/api/teacher/marks/${encodeURIComponent(student.studentId)}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }

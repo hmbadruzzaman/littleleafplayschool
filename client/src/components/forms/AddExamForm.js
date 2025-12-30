@@ -46,7 +46,7 @@ function AddExamForm({ onClose, onSuccess }) {
 
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5001/api/admin/exams', {
+            const response = await fetch('https://welittleleaf.com/api/admin/exams', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

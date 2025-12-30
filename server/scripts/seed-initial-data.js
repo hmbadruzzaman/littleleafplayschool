@@ -39,7 +39,7 @@ async function seedInitialData() {
         console.log('2️⃣  Creating School Information...');
 
         const schoolInfo = {
-            infoId: 'SCHOOL#INFO',
+            infoId: 'INFO#SCHOOL',
             schoolName: 'Little Leaf Play School',
             principalName: 'Mr. H M Kamruzzaman',
             address: 'Malda, Kaliachak, India, 732201',

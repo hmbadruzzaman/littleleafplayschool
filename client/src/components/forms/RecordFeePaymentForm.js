@@ -26,7 +26,7 @@ function RecordFeePaymentForm({ onClose, onSuccess, preselectedStudent = null })
     const fetchStudents = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5001/api/admin/students', {
+            const response = await fetch('https://welittleleaf.com/api/admin/students', {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -66,7 +66,7 @@ function RecordFeePaymentForm({ onClose, onSuccess, preselectedStudent = null })
 
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5001/api/admin/fees', {
+            const response = await fetch('https://welittleleaf.com/api/admin/fees', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

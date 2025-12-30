@@ -26,7 +26,7 @@ function AddExpenditureForm({ onClose, onSuccess }) {
 
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5001/api/admin/expenditures', {
+            const response = await fetch('https://welittleleaf.com/api/admin/expenditures', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

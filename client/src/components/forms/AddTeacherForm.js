@@ -31,7 +31,7 @@ function AddTeacherForm({ onClose, onSuccess }) {
 
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5001/api/admin/teachers', {
+            const response = await fetch('https://welittleleaf.com/api/admin/teachers', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
