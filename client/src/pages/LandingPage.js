@@ -69,12 +69,43 @@ function LandingPage() {
                                 {schoolInfo?.schoolName || 'Little Leaf Play School'} is dedicated to providing quality early childhood education
                                 in a safe, nurturing environment. We focus on holistic development through play-based learning.
                             </p>
-                            {schoolInfo?.principalName && (
-                                <p><strong>Principal:</strong> {schoolInfo.principalName}</p>
-                            )}
                             {schoolInfo?.foundedYear && (
                                 <p><strong>Founded:</strong> {schoolInfo.foundedYear}</p>
                             )}
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Key Personnel Section */}
+            <section className="key-personnel section">
+                <div className="container">
+                    <h2 className="section-title">Key Personnel</h2>
+                    <div className="personnel-grid">
+                        <div className="personnel-card">
+                            <div className="personnel-image">
+                                <img src="https://little-leaf.s3.us-east-1.amazonaws.com/little-leaf/tajmul-Haque.jpg" alt="Director" />
+                            </div>
+                            <div className="personnel-info">
+                                <h3>Director</h3>
+                                <p className="personnel-name">Mr. Tajmul Haque</p>
+                                <p className="personnel-description">
+                                    Over 30 years of experience in administration as Retired Chief Office Superintendent in Indian Railways.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="personnel-card">
+                            <div className="personnel-image">
+                                <img src="https://little-leaf.s3.us-east-1.amazonaws.com/little-leaf/Riju.jpg" alt="Principal" />
+                            </div>
+                            <div className="personnel-info">
+                                <h3>Principal</h3>
+                                <p className="personnel-name">{schoolInfo?.principalName || 'Mr. H M Kamruzzaman'}</p>
+                                <p className="personnel-description">
+                                    Dedicated educator committed to fostering excellence in early childhood education.
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
