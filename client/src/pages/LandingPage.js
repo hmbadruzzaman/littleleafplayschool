@@ -53,7 +53,7 @@ function LandingPage() {
                         <h2>Welcome to {schoolInfo?.schoolName || 'Little Leaf Play School'}</h2>
                         <p>Nurturing young minds for a bright future</p>
                         <button onClick={() => setShowInquiryForm(true)} className="btn btn-primary btn-lg">
-                            Get Started
+                            Get a call back from us
                         </button>
                     </div>
                 </div>

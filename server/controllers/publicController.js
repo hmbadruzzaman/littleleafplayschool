@@ -22,16 +22,14 @@ exports.getMediaGallery = async (req, res) => {
         const { mediaType } = req.query;
 
         let params = {
-            TableName: TABLES.MEDIA,
-            FilterExpression: 'isPublic = :isPublic',
-            ExpressionAttributeValues: {
-                ':isPublic': true
-            }
+            TableName: TABLES.MEDIA
         };
 
         if (mediaType) {
-            params.FilterExpression += ' AND mediaType = :mediaType';
-            params.ExpressionAttributeValues[':mediaType'] = mediaType.toUpperCase();
+            params.FilterExpression = 'mediaType = :mediaType';
+            params.ExpressionAttributeValues = {
+                ':mediaType': mediaType.toUpperCase()
+            };
         }
 
         const result = await docClient.scan(params).promise();
