@@ -121,6 +121,18 @@ class UserModel {
         return result.Attributes;
     }
 
+    // Update user by roll number (for students)
+    static async updateByRollNumber(rollNumber, updates) {
+        // First find the user by roll number
+        const user = await this.findByRollNumber(rollNumber);
+        if (!user) {
+            throw new Error('User not found');
+        }
+
+        // Then update using userId
+        return await this.update(user.userId, updates);
+    }
+
     // Delete user
     static async delete(userId) {
         const params = {

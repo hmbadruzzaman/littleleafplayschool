@@ -12,7 +12,9 @@ function AddStudentForm({ onClose, onSuccess }) {
         admissionDate: '',
         class: 'Play',
         password: 'password123',
-        status: 'ACTIVE'
+        status: 'ACTIVE',
+        transportEnabled: false,
+        transportStartMonth: ''
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -20,10 +22,10 @@ function AddStudentForm({ onClose, onSuccess }) {
     const [generatedRollNumber, setGeneratedRollNumber] = useState('');
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
+        const { name, value, type, checked } = e.target;
         setFormData(prev => ({
             ...prev,
-            [name]: value
+            [name]: type === 'checkbox' ? checked : value
         }));
     };
 
@@ -201,14 +203,13 @@ function AddStudentForm({ onClose, onSuccess }) {
                     </div>
 
                     <div className="form-group">
-                        <label>Parent Email *</label>
+                        <label>Parent Email</label>
                         <input
                             type="email"
                             name="parentEmail"
                             value={formData.parentEmail}
                             onChange={handleChange}
-                            placeholder="parent@email.com"
-                            required
+                            placeholder="parent@email.com (optional)"
                         />
                     </div>
 
@@ -249,6 +250,41 @@ function AddStudentForm({ onClose, onSuccess }) {
                             </select>
                         </div>
                     </div>
+
+                    <div className="form-group">
+                        <div style={{display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px'}}>
+                            <input
+                                type="checkbox"
+                                id="transportEnabled"
+                                name="transportEnabled"
+                                checked={formData.transportEnabled}
+                                onChange={handleChange}
+                                style={{width: 'auto', margin: 0}}
+                            />
+                            <label htmlFor="transportEnabled" style={{margin: 0, fontWeight: '500'}}>
+                                Enable Transport
+                            </label>
+                        </div>
+                        <small style={{color: '#6b7280', fontSize: '0.85rem', display: 'block', marginBottom: '10px'}}>
+                            Check this box if the student will use school transport
+                        </small>
+                    </div>
+
+                    {formData.transportEnabled && (
+                        <div className="form-group">
+                            <label>Transport Start Month *</label>
+                            <input
+                                type="month"
+                                name="transportStartMonth"
+                                value={formData.transportStartMonth}
+                                onChange={handleChange}
+                                required
+                            />
+                            <small style={{color: '#6b7280', fontSize: '0.85rem'}}>
+                                Select the month from which transport fees should be calculated
+                            </small>
+                        </div>
+                    )}
 
                     <div className="form-actions">
                         <button type="button" onClick={onClose} className="btn btn-secondary">

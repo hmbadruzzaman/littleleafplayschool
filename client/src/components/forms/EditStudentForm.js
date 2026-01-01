@@ -11,16 +11,19 @@ function EditStudentForm({ student, onClose, onSuccess }) {
         address: student.address || '',
         class: student.class || 'Play',
         status: student.status || 'ACTIVE',
-        inactiveDate: student.inactiveDate || ''
+        inactiveDate: student.inactiveDate || '',
+        password: '',
+        transportEnabled: student.transportEnabled || false,
+        transportStartMonth: student.transportStartMonth || ''
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
+        const { name, value, type, checked } = e.target;
         setFormData(prev => ({
             ...prev,
-            [name]: value
+            [name]: type === 'checkbox' ? checked : value
         }));
     };
 
@@ -179,14 +182,13 @@ function EditStudentForm({ student, onClose, onSuccess }) {
                     </div>
 
                     <div className="form-group">
-                        <label>Parent Email *</label>
+                        <label>Parent Email </label>
                         <input
                             type="email"
                             name="parentEmail"
                             value={formData.parentEmail}
                             onChange={handleChange}
                             placeholder="parent@email.com"
-                            required
                         />
                     </div>
 
@@ -201,6 +203,55 @@ function EditStudentForm({ student, onClose, onSuccess }) {
                             required
                         />
                     </div>
+
+                    <div className="form-group">
+                        <label>Change Password</label>
+                        <input
+                            type="text"
+                            name="password"
+                            value={formData.password}
+                            onChange={handleChange}
+                            placeholder="Leave empty to keep current password"
+                        />
+                        <small style={{color: '#6b7280', fontSize: '0.85rem'}}>
+                            Only fill this if you want to change the student's login password
+                        </small>
+                    </div>
+
+                    <div className="form-group">
+                        <div style={{display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px'}}>
+                            <input
+                                type="checkbox"
+                                id="transportEnabled"
+                                name="transportEnabled"
+                                checked={formData.transportEnabled}
+                                onChange={handleChange}
+                                style={{width: 'auto', margin: 0}}
+                            />
+                            <label htmlFor="transportEnabled" style={{margin: 0, fontWeight: '500'}}>
+                                Enable Transport
+                            </label>
+                        </div>
+                        <small style={{color: '#6b7280', fontSize: '0.85rem', display: 'block', marginBottom: '10px'}}>
+                            Check this box if the student uses school transport
+                        </small>
+                    </div>
+
+                    {formData.transportEnabled && (
+                        <div className="form-group">
+                            <label>Transport Start Month *</label>
+                            <input
+                                type="month"
+                                name="transportStartMonth"
+                                value={formData.transportStartMonth}
+                                onChange={handleChange}
+                                required
+                            />
+                            <small style={{color: '#6b7280', fontSize: '0.85rem'}}>
+                                Select the month from which transport fees should be calculated
+                            </small>
+                        </div>
+                    )}
 
                     <div className="form-actions">
                         <button type="button" onClick={onClose} className="btn btn-secondary">

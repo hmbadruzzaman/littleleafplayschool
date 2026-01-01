@@ -11,7 +11,7 @@ const { hashPassword, generateRollNumber, generateTeacherId, successResponse, er
 // Student Management
 exports.createStudent = async (req, res) => {
     try {
-        const { fullName, dateOfBirth, parentName, parentPhone, parentEmail, address, class: className, password } = req.body;
+        const { fullName, dateOfBirth, parentName, parentPhone, parentEmail, address, class: className, password, transportEnabled, transportStartMonth, admissionDate } = req.body;
 
         if (!fullName || !parentPhone || !className || !password) {
             return res.status(400).json(errorResponse('Missing required fields'));
@@ -31,8 +31,8 @@ exports.createStudent = async (req, res) => {
             isActive: true
         });
 
-        // Create student profile
-        const student = await StudentModel.create({
+        // Create student profile with transport data
+        const studentData = {
             rollNumber,
             fullName,
             dateOfBirth,
@@ -41,8 +41,18 @@ exports.createStudent = async (req, res) => {
             parentEmail: parentEmail || '',
             address,
             class: className,
-            admissionDate: new Date().toISOString().split('T')[0]
-        });
+            admissionDate: admissionDate || new Date().toISOString().split('T')[0]
+        };
+
+        // Add transport fields if enabled
+        if (transportEnabled) {
+            studentData.transportEnabled = true;
+            studentData.transportStartMonth = transportStartMonth;
+        } else {
+            studentData.transportEnabled = false;
+        }
+
+        const student = await StudentModel.create(studentData);
 
         res.status(201).json(successResponse({ user, student, rollNumber }, `Student created successfully with roll number: ${rollNumber}`));
     } catch (error) {
@@ -66,6 +76,23 @@ exports.updateStudent = async (req, res) => {
         const { studentId } = req.params;
         const updates = req.body;
 
+        // Handle password change if provided
+        if (updates.password && updates.password.trim() !== '') {
+            // Get student to find their roll number
+            const student = await StudentModel.findById(studentId);
+            if (!student) {
+                return res.status(404).json(errorResponse('Student not found'));
+            }
+
+            // Update password in user account
+            const hashedPassword = await hashPassword(updates.password);
+            await UserModel.updateByRollNumber(student.rollNumber, { password: hashedPassword });
+
+            // Remove password from student updates (it's stored in User table)
+            delete updates.password;
+        }
+
+        // Update student profile
         const student = await StudentModel.update(studentId, updates);
         res.status(200).json(successResponse(student, 'Student updated successfully'));
     } catch (error) {
@@ -358,8 +385,33 @@ exports.calculatePendingFees = async (req, res) => {
                     });
                 }
             } else if (structure.frequency === 'MONTHLY') {
-                // For monthly fees, calculate from admission date to current month
-                const startMonth = new Date(admissionDate.getFullYear(), admissionDate.getMonth(), 1);
+                // For monthly fees, determine start date based on fee type
+                let startMonth;
+
+                // Special handling for TRANSPORT_FEE
+                if (structure.feeType === 'TRANSPORT_FEE') {
+                    // Check if transport is enabled for this student
+                    if (!student.transportEnabled) {
+                        console.log(`${structure.feeType}: Transport not enabled for student, skipping`);
+                        continue;
+                    }
+
+                    // If transport is enabled, start from transportStartMonth
+                    if (student.transportStartMonth) {
+                        // Parse transport start month (format: YYYY-MM)
+                        const [year, month] = student.transportStartMonth.split('-').map(Number);
+                        startMonth = new Date(year, month - 1, 1);
+                        console.log(`${structure.feeType}: Transport enabled from ${student.transportStartMonth}`);
+                    } else {
+                        // If no start month specified, use admission date
+                        startMonth = new Date(admissionDate.getFullYear(), admissionDate.getMonth(), 1);
+                        console.log(`${structure.feeType}: Transport enabled, no start month, using admission date`);
+                    }
+                } else {
+                    // For other monthly fees (tuition, etc.), use admission date
+                    startMonth = new Date(admissionDate.getFullYear(), admissionDate.getMonth(), 1);
+                }
+
                 const currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
                 console.log(`${structure.feeType}: Calculating from ${startMonth.toLocaleDateString()} to ${currentMonth.toLocaleDateString()}`);
@@ -368,7 +420,7 @@ exports.calculatePendingFees = async (req, res) => {
                 const months = [];
                 let monthCount = 0;
 
-                // Loop through each month from admission to now
+                // Loop through each month from start to now
                 for (let d = new Date(startMonth); d <= currentMonth; d.setMonth(d.getMonth() + 1)) {
                     monthCount++;
                     const monthName = d.toLocaleString('default', { month: 'long' });
