@@ -101,14 +101,16 @@ exports.submitInquiry = async (req, res) => {
         const { parentName, email, phone, studentName, studentAge, inquiry, preferredClass } = req.body;
 
         // Validation
-        if (!parentName || !email || !phone || !studentName || !studentAge || !inquiry) {
+        if (!parentName || !phone || !studentName || !studentAge || !inquiry) {
             return res.status(400).json(errorResponse('All required fields must be filled'));
         }
 
-        // Email validation
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            return res.status(400).json(errorResponse('Invalid email format'));
+        // Email validation (optional)
+        if (email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                return res.status(400).json(errorResponse('Invalid email format'));
+            }
         }
 
         // Phone validation (basic)
@@ -126,7 +128,7 @@ exports.submitInquiry = async (req, res) => {
         const inquiryData = {
             inquiryId: `INQ#${Date.now()}`,
             parentName,
-            email,
+            email: email || '',
             phone,
             studentName,
             studentAge: age,
