@@ -9,6 +9,8 @@ function RecordFeePaymentForm({ onClose, onSuccess, preselectedStudent = null })
         feeType: 'MONTHLY_FEE',
         amount: '',
         dueDate: '',
+        month: '',
+        academicYear: new Date().getFullYear().toString(),
         paymentStatus: 'PAID',
         paymentMethod: 'CASH',
         transactionId: '',
@@ -26,7 +28,10 @@ function RecordFeePaymentForm({ onClose, onSuccess, preselectedStudent = null })
     const fetchStudents = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('https://welittleleaf.com/api/admin/students', {
+            const API_URL = window.location.hostname === 'localhost'
+                ? 'http://localhost:5001/api'
+                : 'https://welittleleaf.com/api';
+            const response = await fetch(`${API_URL}/admin/students`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -66,7 +71,10 @@ function RecordFeePaymentForm({ onClose, onSuccess, preselectedStudent = null })
 
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('https://welittleleaf.com/api/admin/fees', {
+            const API_URL = window.location.hostname === 'localhost'
+                ? 'http://localhost:5001/api'
+                : 'https://welittleleaf.com/api';
+            const response = await fetch(`${API_URL}/admin/fees`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -166,6 +174,54 @@ function RecordFeePaymentForm({ onClose, onSuccess, preselectedStudent = null })
                             />
                         </div>
                     </div>
+
+                    {formData.feeType === 'MONTHLY_FEE' && (
+                        <div className="form-row">
+                            <div className="form-group">
+                                <label>Month *</label>
+                                <select
+                                    name="month"
+                                    value={formData.month}
+                                    onChange={handleChange}
+                                    required
+                                >
+                                    <option value="">-- Select Month --</option>
+                                    <option value="January">January</option>
+                                    <option value="February">February</option>
+                                    <option value="March">March</option>
+                                    <option value="April">April</option>
+                                    <option value="May">May</option>
+                                    <option value="June">June</option>
+                                    <option value="July">July</option>
+                                    <option value="August">August</option>
+                                    <option value="September">September</option>
+                                    <option value="October">October</option>
+                                    <option value="November">November</option>
+                                    <option value="December">December</option>
+                                </select>
+                            </div>
+
+                            <div className="form-group">
+                                <label>Academic Year *</label>
+                                <select
+                                    name="academicYear"
+                                    value={formData.academicYear}
+                                    onChange={handleChange}
+                                    required
+                                >
+                                    <option value={`${new Date().getFullYear() - 1}-${new Date().getFullYear()}`}>
+                                        {new Date().getFullYear() - 1}-{new Date().getFullYear()}
+                                    </option>
+                                    <option value={`${new Date().getFullYear()}-${new Date().getFullYear() + 1}`}>
+                                        {new Date().getFullYear()}-{new Date().getFullYear() + 1}
+                                    </option>
+                                    <option value={`${new Date().getFullYear() + 1}-${new Date().getFullYear() + 2}`}>
+                                        {new Date().getFullYear() + 1}-{new Date().getFullYear() + 2}
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                    )}
 
                     <div className="form-row">
                         <div className="form-group">

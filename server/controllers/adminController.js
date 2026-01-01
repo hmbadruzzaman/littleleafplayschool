@@ -153,21 +153,43 @@ exports.updateTeacher = async (req, res) => {
 // Fee Management
 exports.createFee = async (req, res) => {
     try {
-        const { studentId, rollNumber, feeType, amount, dueDate, remarks } = req.body;
-
-        if (!studentId || !feeType || !amount || !dueDate) {
-            return res.status(400).json(errorResponse('Missing required fields'));
-        }
-
-        const fee = await FeeModel.create({
+        const {
             studentId,
             rollNumber,
             feeType,
             amount,
             dueDate,
-            paymentStatus: 'PENDING',
+            month,
+            academicYear,
+            paymentStatus,
+            paymentMethod,
+            paymentDate,
+            transactionId,
+            remarks
+        } = req.body;
+
+        if (!studentId || !feeType || !amount || !dueDate) {
+            return res.status(400).json(errorResponse('Missing required fields'));
+        }
+
+        const feeData = {
+            studentId,
+            rollNumber,
+            feeType,
+            amount,
+            dueDate,
+            paymentStatus: paymentStatus || 'PENDING',
             remarks: remarks || ''
-        });
+        };
+
+        // Add optional fields if provided
+        if (month) feeData.month = month;
+        if (academicYear) feeData.academicYear = academicYear;
+        if (paymentMethod) feeData.paymentMethod = paymentMethod;
+        if (paymentDate) feeData.paymentDate = paymentDate;
+        if (transactionId) feeData.transactionId = transactionId;
+
+        const fee = await FeeModel.create(feeData);
 
         res.status(201).json(successResponse(fee, 'Fee created successfully'));
     } catch (error) {
@@ -203,6 +225,219 @@ exports.getStudentFees = async (req, res) => {
     } catch (error) {
         console.error('Get student fees error:', error);
         res.status(500).json(errorResponse('Failed to retrieve fees', error));
+    }
+};
+
+// Fee Structure Management
+exports.createFeeStructure = async (req, res) => {
+    try {
+        const { feeType, amount, frequency } = req.body;
+
+        if (!feeType || !amount || !frequency) {
+            return res.status(400).json(errorResponse('Fee type, amount, and frequency are required'));
+        }
+
+        const feeStructure = {
+            feeStructureId: `FEE_STRUCTURE#${feeType}`,
+            feeType,
+            amount: parseFloat(amount),
+            frequency, // ONE_TIME or MONTHLY
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+
+        await docClient.put({
+            TableName: TABLES.FEE_STRUCTURE,
+            Item: feeStructure
+        }).promise();
+
+        res.status(201).json(successResponse(feeStructure, 'Fee structure created successfully'));
+    } catch (error) {
+        console.error('Create fee structure error:', error);
+        res.status(500).json(errorResponse('Failed to create fee structure', error));
+    }
+};
+
+exports.getAllFeeStructures = async (req, res) => {
+    try {
+        const result = await docClient.scan({
+            TableName: TABLES.FEE_STRUCTURE
+        }).promise();
+
+        res.status(200).json(successResponse(result.Items, 'Fee structures retrieved successfully'));
+    } catch (error) {
+        console.error('Get fee structures error:', error);
+        res.status(500).json(errorResponse('Failed to retrieve fee structures', error));
+    }
+};
+
+// Calculate pending fees for a student based on fee structure
+exports.calculatePendingFees = async (req, res) => {
+    try {
+        const { studentId } = req.params;
+        console.log('Calculating pending fees for student:', studentId);
+
+        // Get fee structures
+        console.log('Fetching fee structures from table:', TABLES.FEE_STRUCTURE);
+        const feeStructuresResult = await docClient.scan({
+            TableName: TABLES.FEE_STRUCTURE
+        }).promise();
+        const feeStructures = feeStructuresResult.Items || [];
+        console.log('Found fee structures:', feeStructures.length);
+
+        // Get student's fee records
+        const studentFees = await FeeModel.getByStudentId(studentId);
+        console.log('Found student fee records:', studentFees.length);
+        console.log('Student fees:', JSON.stringify(studentFees, null, 2));
+
+        // Get student admission date
+        const studentResult = await docClient.get({
+            TableName: TABLES.STUDENTS,
+            Key: { studentId }
+        }).promise();
+        const student = studentResult.Item;
+
+        if (!student) {
+            return res.status(404).json(errorResponse('Student not found'));
+        }
+
+        // Parse admission date carefully to avoid timezone issues
+        // For date-only strings like '2024-01-01', parse manually to avoid UTC conversion
+        const admissionDateStr = student.admissionDate || student.createdAt || new Date().toISOString();
+        let admissionDate;
+
+        if (admissionDateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            // Date-only format (YYYY-MM-DD), parse as local date
+            const [year, month, day] = admissionDateStr.split('-').map(Number);
+            admissionDate = new Date(year, month - 1, day); // month is 0-indexed
+        } else {
+            // ISO string with time, parse normally
+            admissionDate = new Date(admissionDateStr);
+        }
+
+        console.log('Student admission date string:', admissionDateStr);
+        console.log('Student admission date parsed:', admissionDate);
+        console.log('Admission year:', admissionDate.getFullYear(), 'month:', admissionDate.getMonth());
+
+        const today = new Date();
+        let totalPending = 0;
+        const pendingBreakdown = [];
+
+        for (const structure of feeStructures) {
+            if (structure.frequency === 'ONE_TIME') {
+                // For one-time fees (Admission, Annual, etc.)
+                // If ANY payment with status=PAID exists, consider it fully paid regardless of amount
+                const paidFees = studentFees.filter(f =>
+                    f.feeType === structure.feeType && f.paymentStatus === 'PAID'
+                );
+
+                if (paidFees.length > 0) {
+                    // Has PAID status, so no pending regardless of amount
+                    console.log(`${structure.feeType}: Status PAID found, no pending`);
+                    continue;
+                }
+
+                // No PAID status found, calculate pending based on PENDING records
+                const pendingFees = studentFees.filter(f =>
+                    f.feeType === structure.feeType && f.paymentStatus === 'PENDING'
+                );
+                const totalPending_recorded = pendingFees.reduce((sum, f) => sum + parseFloat(f.amount || 0), 0);
+
+                // Pending is the full structure amount minus any PENDING records
+                const pending = structure.amount - totalPending_recorded;
+
+                if (pending > 0) {
+                    console.log(`${structure.feeType}: Pending amount = ${pending}`);
+                    totalPending += pending;
+                    pendingBreakdown.push({
+                        feeType: structure.feeType,
+                        structureAmount: structure.amount,
+                        paidAmount: 0,
+                        pendingAmount: pending,
+                        frequency: 'ONE_TIME'
+                    });
+                }
+            } else if (structure.frequency === 'MONTHLY') {
+                // For monthly fees, calculate from admission date to current month
+                const startMonth = new Date(admissionDate.getFullYear(), admissionDate.getMonth(), 1);
+                const currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+                console.log(`${structure.feeType}: Calculating from ${startMonth.toLocaleDateString()} to ${currentMonth.toLocaleDateString()}`);
+
+                let monthPending = 0;
+                const months = [];
+                let monthCount = 0;
+
+                // Loop through each month from admission to now
+                for (let d = new Date(startMonth); d <= currentMonth; d.setMonth(d.getMonth() + 1)) {
+                    monthCount++;
+                    const monthName = d.toLocaleString('default', { month: 'long' });
+                    const year = d.getFullYear();
+
+                    // Find payments for this month and fee type
+                    const monthPayments = studentFees.filter(f =>
+                        f.feeType === structure.feeType &&
+                        f.month === monthName &&
+                        f.academicYear && f.academicYear.includes(year.toString())
+                    );
+
+                    const paidThisMonth = monthPayments
+                        .filter(f => f.paymentStatus === 'PAID')
+                        .reduce((sum, f) => sum + parseFloat(f.amount || 0), 0);
+
+                    const pendingThisMonth = monthPayments
+                        .filter(f => f.paymentStatus !== 'PAID')
+                        .reduce((sum, f) => sum + parseFloat(f.amount || 0), 0);
+
+                    const amountDue = structure.amount;
+                    const totalRecorded = paidThisMonth + pendingThisMonth;
+
+                    // Calculate pending for this month
+                    let monthlyPending = 0;
+                    if (paidThisMonth >= amountDue) {
+                        // Fully paid
+                        monthlyPending = 0;
+                    } else if (totalRecorded < amountDue) {
+                        // Not enough recorded (paid + pending), add the difference
+                        monthlyPending = amountDue - paidThisMonth;
+                    } else {
+                        // Has pending records that cover the remaining
+                        monthlyPending = pendingThisMonth;
+                    }
+
+                    if (monthlyPending > 0) {
+                        monthPending += monthlyPending;
+                        months.push(`${monthName} ${year}: ₹${monthlyPending}`);
+                    }
+                }
+
+                console.log(`${structure.feeType}: Processed ${monthCount} months, total pending = ${monthPending}`);
+
+                if (monthPending > 0) {
+                    totalPending += monthPending;
+                    pendingBreakdown.push({
+                        feeType: structure.feeType,
+                        structureAmount: structure.amount,
+                        pendingAmount: monthPending,
+                        frequency: 'MONTHLY',
+                        months
+                    });
+                }
+            }
+        }
+
+        console.log('Calculation complete. Total pending:', totalPending);
+        console.log('Breakdown items:', pendingBreakdown.length);
+
+        res.status(200).json(successResponse({
+            studentId,
+            totalPending,
+            breakdown: pendingBreakdown
+        }, 'Pending fees calculated successfully'));
+    } catch (error) {
+        console.error('Calculate pending fees error:', error);
+        console.error('Error stack:', error.stack);
+        res.status(500).json(errorResponse('Failed to calculate pending fees', error.message));
     }
 };
 

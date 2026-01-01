@@ -21,6 +21,11 @@ router.put('/teachers/:teacherId', adminController.updateTeacher);
 router.post('/fees', adminController.createFee);
 router.put('/fees/:feeId/payment', adminController.recordPayment);
 router.get('/students/:studentId/fees', adminController.getStudentFees);
+router.get('/students/:studentId/pending-fees', adminController.calculatePendingFees);
+
+// Fee structure management
+router.post('/fee-structure', adminController.createFeeStructure);
+router.get('/fee-structure', adminController.getAllFeeStructures);
 
 // Exam management
 router.post('/exams', adminController.createExam);

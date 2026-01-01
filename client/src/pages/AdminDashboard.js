@@ -5,6 +5,7 @@ import AddStudentForm from '../components/forms/AddStudentForm';
 import AddTeacherForm from '../components/forms/AddTeacherForm';
 import AddExamForm from '../components/forms/AddExamForm';
 import AddHolidayForm from '../components/forms/AddHolidayForm';
+import AddFeeForm from '../components/forms/AddFeeForm';
 import RecordFeePaymentForm from '../components/forms/RecordFeePaymentForm';
 import AddExpenditureForm from '../components/forms/AddExpenditureForm';
 import StudentDetailsModal from '../components/modals/StudentDetailsModal';
@@ -22,6 +23,7 @@ function AdminDashboard() {
     const [showAddTeacher, setShowAddTeacher] = useState(false);
     const [showAddExam, setShowAddExam] = useState(false);
     const [showAddHoliday, setShowAddHoliday] = useState(false);
+    const [showAddFee, setShowAddFee] = useState(false);
     const [showRecordPayment, setShowRecordPayment] = useState(false);
     const [showAddExpenditure, setShowAddExpenditure] = useState(false);
     const [selectedStudent, setSelectedStudent] = useState(null);
@@ -69,13 +71,16 @@ function AdminDashboard() {
     const fetchData = async () => {
         try {
             const { startDate, endDate } = getDateRange();
+            const API_URL = window.location.hostname === 'localhost'
+                ? 'http://localhost:5001/api'
+                : 'https://welittleleaf.com/api';
 
             const [studentsRes, teachersRes, studentReportRes, earningsRes, expenditureRes, inquiriesRes] = await Promise.all([
                 adminAPI.getAllStudents(),
                 adminAPI.getAllTeachers(),
                 adminAPI.getStudentCountReport(),
                 adminAPI.getEarningsReport(startDate, endDate),
-                fetch(`https://welittleleaf.com/api/admin/reports/expenditure?startDate=${startDate}&endDate=${endDate}`, {
+                fetch(`${API_URL}/admin/reports/expenditure?startDate=${startDate}&endDate=${endDate}`, {
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('token')}`
                     }
@@ -226,6 +231,7 @@ function AdminDashboard() {
                                 <button className="action-btn" onClick={() => setShowAddTeacher(true)}>Create Teacher</button>
                                 <button className="action-btn" onClick={() => setShowAddExam(true)}>Create Exam</button>
                                 <button className="action-btn" onClick={() => setShowAddHoliday(true)}>Add Holiday</button>
+                                <button className="action-btn" onClick={() => setShowAddFee(true)}>Add Fee</button>
                                 <button className="action-btn" onClick={() => setShowRecordPayment(true)}>Record Fee Payment</button>
                                 <button className="action-btn" onClick={() => setShowAddExpenditure(true)}>Add Expenditure</button>
                                 <button className="action-btn" onClick={() => setActiveTab('reports')}>View Reports</button>
@@ -441,6 +447,12 @@ function AdminDashboard() {
             {showAddHoliday && (
                 <AddHolidayForm
                     onClose={() => setShowAddHoliday(false)}
+                    onSuccess={fetchData}
+                />
+            )}
+            {showAddFee && (
+                <AddFeeForm
+                    onClose={() => setShowAddFee(false)}
                     onSuccess={fetchData}
                 />
             )}

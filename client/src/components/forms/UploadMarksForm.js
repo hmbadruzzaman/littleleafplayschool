@@ -62,7 +62,10 @@ function UploadMarksForm({ student, exams, onClose, onSuccess }) {
 
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('https://welittleleaf.com/api/teacher/marks', {
+            const API_URL = window.location.hostname === 'localhost'
+                ? 'http://localhost:5001/api'
+                : 'https://welittleleaf.com/api';
+            const response = await fetch(`${API_URL}/teacher/marks`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
