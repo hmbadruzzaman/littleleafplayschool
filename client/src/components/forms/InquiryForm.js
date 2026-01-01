@@ -97,13 +97,12 @@ function InquiryForm({ onClose }) {
                         </div>
 
                         <div className="form-group">
-                            <label>Email *</label>
+                            <label>Email</label>
                             <input
                                 type="email"
                                 name="email"
                                 value={formData.email}
                                 onChange={handleChange}
-                                required
                                 placeholder="your.email@example.com"
                             />
                         </div>
