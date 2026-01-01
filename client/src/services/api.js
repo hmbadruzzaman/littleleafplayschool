@@ -1,7 +1,9 @@
 import axios from 'axios';
 
-// API URL - always use production URL for now
-const API_BASE_URL = 'https://welittleleaf.com/api';
+// API URL - automatically detect based on where the app is running
+const API_BASE_URL = window.location.hostname === 'localhost'
+    ? 'http://localhost:5001/api'
+    : 'https://welittleleaf.com/api';
 
 const api = axios.create({
     baseURL: API_BASE_URL,
