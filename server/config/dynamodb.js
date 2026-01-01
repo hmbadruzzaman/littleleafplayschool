@@ -29,6 +29,7 @@ if (process.env.USE_LOCAL_DB === 'true') {
         MEDIA: 'LittleLeaf_Media',
         SCHOOL_INFO: 'LittleLeaf_SchoolInfo',
         NOTIFICATIONS: 'LittleLeaf_Notifications',
+        EXPENDITURES: 'LittleLeaf_Expenditures',
         INQUIRIES: 'LittleLeaf_Inquiries'
     };
 
