@@ -3,7 +3,6 @@ import './Forms.css';
 
 function AddStudentForm({ onClose, onSuccess }) {
     const [formData, setFormData] = useState({
-        rollNumber: '',
         fullName: '',
         dateOfBirth: '',
         parentName: '',
@@ -11,12 +10,14 @@ function AddStudentForm({ onClose, onSuccess }) {
         parentEmail: '',
         address: '',
         admissionDate: '',
-        class: 'Pre-KG A',
+        class: 'Play',
         password: 'password123',
         status: 'ACTIVE'
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [showSuccess, setShowSuccess] = useState(false);
+    const [generatedRollNumber, setGeneratedRollNumber] = useState('');
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -33,7 +34,11 @@ function AddStudentForm({ onClose, onSuccess }) {
 
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('https://welittleleaf.com/api/admin/students', {
+            const API_URL = window.location.hostname === 'localhost'
+                ? 'http://localhost:5001/api'
+                : 'https://welittleleaf.com/api';
+
+            const response = await fetch(`${API_URL}/admin/students`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -45,8 +50,9 @@ function AddStudentForm({ onClose, onSuccess }) {
             const data = await response.json();
 
             if (data.success) {
-                onSuccess();
-                onClose();
+                const rollNumber = data.data.rollNumber;
+                setGeneratedRollNumber(rollNumber);
+                setShowSuccess(true);
             } else {
                 setError(data.message || 'Failed to create student');
             }
@@ -57,6 +63,52 @@ function AddStudentForm({ onClose, onSuccess }) {
             setLoading(false);
         }
     };
+
+    // Handle success modal close
+    const handleSuccessClose = () => {
+        setShowSuccess(false);
+        onSuccess();
+        onClose();
+    };
+
+    // Show success modal if student was created
+    if (showSuccess) {
+        return (
+            <div className="modal-overlay" onClick={handleSuccessClose}>
+                <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px', textAlign: 'center' }}>
+                    <div className="modal-header" style={{ borderBottom: 'none', paddingBottom: '0' }}>
+                        <button className="close-btn" onClick={handleSuccessClose}>&times;</button>
+                    </div>
+
+                    <div style={{ padding: '20px 30px 30px' }}>
+                        <div style={{ fontSize: '48px', color: '#10b981', marginBottom: '20px' }}>✓</div>
+                        <h2 style={{ color: '#10b981', marginBottom: '15px' }}>Student Created Successfully!</h2>
+
+                        <div style={{
+                            backgroundColor: '#f0fdf4',
+                            border: '2px solid #10b981',
+                            borderRadius: '8px',
+                            padding: '20px',
+                            marginBottom: '20px'
+                        }}>
+                            <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '8px' }}>Generated Roll Number</p>
+                            <p style={{ fontSize: '28px', fontWeight: 'bold', color: '#059669', letterSpacing: '2px' }}>
+                                {generatedRollNumber}
+                            </p>
+                        </div>
+
+                        <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '25px' }}>
+                            Please save this roll number for future reference. The student can use this roll number to login.
+                        </p>
+
+                        <button onClick={handleSuccessClose} className="btn btn-primary" style={{ minWidth: '150px' }}>
+                            Done
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="modal-overlay" onClick={onClose}>
@@ -71,18 +123,6 @@ function AddStudentForm({ onClose, onSuccess }) {
 
                     <div className="form-row">
                         <div className="form-group">
-                            <label>Roll Number *</label>
-                            <input
-                                type="text"
-                                name="rollNumber"
-                                value={formData.rollNumber}
-                                onChange={handleChange}
-                                placeholder="e.g., STU2024026"
-                                required
-                            />
-                        </div>
-
-                        <div className="form-group">
                             <label>Full Name *</label>
                             <input
                                 type="text"
@@ -93,9 +133,7 @@ function AddStudentForm({ onClose, onSuccess }) {
                                 required
                             />
                         </div>
-                    </div>
 
-                    <div className="form-row">
                         <div className="form-group">
                             <label>Date of Birth *</label>
                             <input
@@ -106,7 +144,9 @@ function AddStudentForm({ onClose, onSuccess }) {
                                 required
                             />
                         </div>
+                    </div>
 
+                    <div className="form-row">
                         <div className="form-group">
                             <label>Class *</label>
                             <select
@@ -115,12 +155,22 @@ function AddStudentForm({ onClose, onSuccess }) {
                                 onChange={handleChange}
                                 required
                             >
-                                <option value="Pre-KG A">Pre-KG A</option>
-                                <option value="Pre-KG B">Pre-KG B</option>
-                                <option value="LKG A">LKG A</option>
-                                <option value="LKG B">LKG B</option>
-                                <option value="UKG A">UKG A</option>
+                                <option value="Play">Play</option>
+                                <option value="Nursery">Nursery</option>
+                                <option value="LKG">LKG</option>
+                                <option value="UKG">UKG</option>
                             </select>
+                        </div>
+
+                        <div className="form-group">
+                            <label>Admission Date *</label>
+                            <input
+                                type="date"
+                                name="admissionDate"
+                                value={formData.admissionDate}
+                                onChange={handleChange}
+                                required
+                            />
                         </div>
                     </div>
 
@@ -150,29 +200,16 @@ function AddStudentForm({ onClose, onSuccess }) {
                         </div>
                     </div>
 
-                    <div className="form-row">
-                        <div className="form-group">
-                            <label>Parent Email *</label>
-                            <input
-                                type="email"
-                                name="parentEmail"
-                                value={formData.parentEmail}
-                                onChange={handleChange}
-                                placeholder="parent@email.com"
-                                required
-                            />
-                        </div>
-
-                        <div className="form-group">
-                            <label>Admission Date *</label>
-                            <input
-                                type="date"
-                                name="admissionDate"
-                                value={formData.admissionDate}
-                                onChange={handleChange}
-                                required
-                            />
-                        </div>
+                    <div className="form-group">
+                        <label>Parent Email *</label>
+                        <input
+                            type="email"
+                            name="parentEmail"
+                            value={formData.parentEmail}
+                            onChange={handleChange}
+                            placeholder="parent@email.com"
+                            required
+                        />
                     </div>
 
                     <div className="form-group">

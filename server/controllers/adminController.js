@@ -17,7 +17,7 @@ exports.createStudent = async (req, res) => {
             return res.status(400).json(errorResponse('Missing required fields'));
         }
 
-        const rollNumber = generateRollNumber();
+        const rollNumber = await generateRollNumber(className);
         const hashedPassword = await hashPassword(password);
 
         // Create user account
@@ -44,7 +44,7 @@ exports.createStudent = async (req, res) => {
             admissionDate: new Date().toISOString().split('T')[0]
         });
 
-        res.status(201).json(successResponse({ user, student }, 'Student created successfully'));
+        res.status(201).json(successResponse({ user, student, rollNumber }, `Student created successfully with roll number: ${rollNumber}`));
     } catch (error) {
         console.error('Create student error:', error);
         res.status(500).json(errorResponse('Failed to create student', error));

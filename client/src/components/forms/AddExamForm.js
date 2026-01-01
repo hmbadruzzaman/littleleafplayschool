@@ -4,7 +4,7 @@ import './Forms.css';
 function AddExamForm({ onClose, onSuccess }) {
     const [formData, setFormData] = useState({
         examName: '',
-        class: 'Pre-KG A',
+        class: 'Play',
         examType: 'MONTHLY',
         examDate: '',
         totalMarks: '100'
@@ -46,7 +46,11 @@ function AddExamForm({ onClose, onSuccess }) {
 
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('https://welittleleaf.com/api/admin/exams', {
+            const API_URL = window.location.hostname === 'localhost'
+                ? 'http://localhost:5001/api'
+                : 'https://welittleleaf.com/api';
+
+            const response = await fetch(`${API_URL}/admin/exams`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -106,11 +110,10 @@ function AddExamForm({ onClose, onSuccess }) {
                                 onChange={handleChange}
                                 required
                             >
-                                <option value="Pre-KG A">Pre-KG A</option>
-                                <option value="Pre-KG B">Pre-KG B</option>
-                                <option value="LKG A">LKG A</option>
-                                <option value="LKG B">LKG B</option>
-                                <option value="UKG A">UKG A</option>
+                                <option value="Play">Play</option>
+                                <option value="Nursery">Nursery</option>
+                                <option value="LKG">LKG</option>
+                                <option value="UKG">UKG</option>
                             </select>
                         </div>
 

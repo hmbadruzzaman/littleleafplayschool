@@ -50,7 +50,7 @@ function TeacherDashboard() {
         return { [selectedClass]: students.filter(s => s.class === selectedClass) };
     };
 
-    const classes = ['Pre-KG A', 'Pre-KG B', 'LKG A', 'LKG B', 'UKG A'];
+    const classes = ['Play', 'Nursery', 'LKG', 'UKG'];
 
     if (loading) {
         return <div className="loading">Loading dashboard...</div>;

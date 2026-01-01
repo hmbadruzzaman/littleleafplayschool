@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const { docClient, TABLES } = require('../config/dynamodb');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_super_secret_jwt_key';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
@@ -21,10 +22,50 @@ const comparePassword = async (password, hashedPassword) => {
     return await bcrypt.compare(password, hashedPassword);
 };
 
-// Generate roll number for students
-const generateRollNumber = (year = new Date().getFullYear()) => {
-    const timestamp = Date.now().toString().slice(-6);
-    return `STU${year}${timestamp}`;
+// Map class names to short codes
+const getClassCode = (className) => {
+    const classMap = {
+        'Play': 'PLAY',
+        'Nursery': 'NURS',
+        'LKG': 'LKG',
+        'UKG': 'UKG'
+    };
+    return classMap[className] || 'STU';
+};
+
+// Generate roll number for students in format: {YEAR}{CLASS}{NUMBER}
+// Example: 2026PLAY001, 2026NURS001, 2026LKG001
+const generateRollNumber = async (className) => {
+    const year = new Date().getFullYear();
+    const classCode = getClassCode(className);
+    const counterKey = `COUNTER#${year}#${classCode}`;
+
+    try {
+        // Use DynamoDB atomic counter to get next number
+        const result = await docClient.update({
+            TableName: TABLES.SCHOOL_INFO || 'LittleLeaf_SchoolInfo',
+            Key: { infoId: counterKey },
+            UpdateExpression: 'SET #count = if_not_exists(#count, :start) + :inc',
+            ExpressionAttributeNames: {
+                '#count': 'count'
+            },
+            ExpressionAttributeValues: {
+                ':inc': 1,
+                ':start': 0
+            },
+            ReturnValues: 'UPDATED_NEW'
+        }).promise();
+
+        const counter = result.Attributes.count;
+        const paddedNumber = String(counter).padStart(3, '0');
+
+        return `${year}${classCode}${paddedNumber}`;
+    } catch (error) {
+        console.error('Error generating roll number:', error);
+        // Fallback to timestamp-based generation
+        const timestamp = Date.now().toString().slice(-3);
+        return `${year}${classCode}${timestamp}`;
+    }
 };
 
 // Generate employee ID for teachers

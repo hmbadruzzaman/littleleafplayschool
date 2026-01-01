@@ -9,7 +9,7 @@ function EditStudentForm({ student, onClose, onSuccess }) {
         parentPhone: student.parentPhone || '',
         parentEmail: student.parentEmail || '',
         address: student.address || '',
-        class: student.class || 'Pre-KG A',
+        class: student.class || 'Play',
         status: student.status || 'ACTIVE',
         inactiveDate: student.inactiveDate || ''
     });
@@ -31,7 +31,11 @@ function EditStudentForm({ student, onClose, onSuccess }) {
 
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch(`https://welittleleaf.com/api/admin/students/${student.studentId}`, {
+            const API_URL = window.location.hostname === 'localhost'
+                ? 'http://localhost:5001/api'
+                : 'https://welittleleaf.com/api';
+
+            const response = await fetch(`${API_URL}/admin/students/${student.studentId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -112,11 +116,10 @@ function EditStudentForm({ student, onClose, onSuccess }) {
                                 onChange={handleChange}
                                 required
                             >
-                                <option value="Pre-KG A">Pre-KG A</option>
-                                <option value="Pre-KG B">Pre-KG B</option>
-                                <option value="LKG A">LKG A</option>
-                                <option value="LKG B">LKG B</option>
-                                <option value="UKG A">UKG A</option>
+                                <option value="Play">Play</option>
+                                <option value="Nursery">Nursery</option>
+                                <option value="LKG">LKG</option>
+                                <option value="UKG">UKG</option>
                             </select>
                         </div>
 
