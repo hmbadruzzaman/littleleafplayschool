@@ -788,16 +788,38 @@ exports.updateInquiryStatus = async (req, res) => {
             return res.status(400).json(errorResponse('Invalid status'));
         }
 
-        const updateExpression = 'SET #status = :status, followedUpAt = :followedUpAt, updatedAt = :updatedAt, #comment = :comment';
+        // Get current inquiry to append to history
+        const currentInquiry = await docClient.get({
+            TableName: TABLES.INQUIRIES,
+            Key: { inquiryId }
+        }).promise();
+
+        if (!currentInquiry.Item) {
+            return res.status(404).json(errorResponse('Inquiry not found'));
+        }
+
+        // Build follow-up history
+        const followUpHistory = currentInquiry.Item.followUpHistory || [];
+
+        // Add new follow-up entry if comment is provided or status is being updated
+        if (comment || status === 'FOLLOWED_UP' || status === 'IN_PROGRESS') {
+            followUpHistory.push({
+                timestamp: new Date().toISOString(),
+                status: status,
+                comment: comment || '',
+                adminAction: status === 'FOLLOWED_UP' ? 'Marked as Followed Up' : status === 'IN_PROGRESS' ? 'Marked as In Progress' : 'Updated'
+            });
+        }
+
+        const updateExpression = 'SET #status = :status, followedUpAt = :followedUpAt, updatedAt = :updatedAt, followUpHistory = :followUpHistory';
         const expressionAttributeNames = {
-            '#status': 'status',
-            '#comment': 'comment'
+            '#status': 'status'
         };
         const expressionAttributeValues = {
             ':status': status,
-            ':followedUpAt': (status === 'FOLLOWED_UP' || status === 'IN_PROGRESS') ? new Date().toISOString() : null,
+            ':followedUpAt': (status === 'FOLLOWED_UP' || status === 'IN_PROGRESS') ? new Date().toISOString() : currentInquiry.Item.followedUpAt,
             ':updatedAt': new Date().toISOString(),
-            ':comment': comment || ''
+            ':followUpHistory': followUpHistory
         };
 
         await docClient.update({
