@@ -52,6 +52,9 @@ exports.createStudent = async (req, res) => {
             studentData.transportEnabled = false;
         }
 
+        // Store plain password for admin reference
+        studentData.plainPassword = password;
+
         const student = await StudentModel.create(studentData);
 
         res.status(201).json(successResponse({ user, student, rollNumber }, `Student created successfully with roll number: ${rollNumber}`));
@@ -88,7 +91,10 @@ exports.updateStudent = async (req, res) => {
             const hashedPassword = await hashPassword(updates.password);
             await UserModel.updateByRollNumber(student.rollNumber, { password: hashedPassword });
 
-            // Remove password from student updates (it's stored in User table)
+            // Store plain password in student record for admin reference
+            updates.plainPassword = updates.password;
+
+            // Remove password from student updates (hashed version is stored in User table)
             delete updates.password;
         }
 
@@ -295,6 +301,38 @@ exports.getAllFeeStructures = async (req, res) => {
     } catch (error) {
         console.error('Get fee structures error:', error);
         res.status(500).json(errorResponse('Failed to retrieve fee structures', error));
+    }
+};
+
+exports.updateFeeStructure = async (req, res) => {
+    try {
+        const { feeStructureId } = req.params;
+        const { amount, frequency } = req.body;
+
+        if (!amount || !frequency) {
+            return res.status(400).json(errorResponse('Amount and frequency are required'));
+        }
+
+        // Only update amount and frequency, NOT feeType (since feeStructureId is based on feeType)
+        const updateExpression = 'SET amount = :amount, frequency = :frequency, updatedAt = :updatedAt';
+        const expressionAttributeValues = {
+            ':amount': parseFloat(amount),
+            ':frequency': frequency,
+            ':updatedAt': new Date().toISOString()
+        };
+
+        const result = await docClient.update({
+            TableName: TABLES.FEE_STRUCTURE,
+            Key: { feeStructureId },
+            UpdateExpression: updateExpression,
+            ExpressionAttributeValues: expressionAttributeValues,
+            ReturnValues: 'ALL_NEW'
+        }).promise();
+
+        res.status(200).json(successResponse(result.Attributes, 'Fee structure updated successfully'));
+    } catch (error) {
+        console.error('Update fee structure error:', error);
+        res.status(500).json(errorResponse('Failed to update fee structure', error));
     }
 };
 
@@ -744,20 +782,22 @@ exports.getAllInquiries = async (req, res) => {
 exports.updateInquiryStatus = async (req, res) => {
     try {
         const { inquiryId } = req.params;
-        const { status } = req.body;
+        const { status, comment } = req.body;
 
-        if (!['NEW', 'FOLLOWED_UP', 'ENROLLED', 'REJECTED'].includes(status)) {
+        if (!['NEW', 'IN_PROGRESS', 'FOLLOWED_UP', 'ENROLLED', 'REJECTED'].includes(status)) {
             return res.status(400).json(errorResponse('Invalid status'));
         }
 
-        const updateExpression = 'SET #status = :status, followedUpAt = :followedUpAt, updatedAt = :updatedAt';
+        const updateExpression = 'SET #status = :status, followedUpAt = :followedUpAt, updatedAt = :updatedAt, #comment = :comment';
         const expressionAttributeNames = {
-            '#status': 'status'
+            '#status': 'status',
+            '#comment': 'comment'
         };
         const expressionAttributeValues = {
             ':status': status,
-            ':followedUpAt': status === 'FOLLOWED_UP' ? new Date().toISOString() : null,
-            ':updatedAt': new Date().toISOString()
+            ':followedUpAt': (status === 'FOLLOWED_UP' || status === 'IN_PROGRESS') ? new Date().toISOString() : null,
+            ':updatedAt': new Date().toISOString(),
+            ':comment': comment || ''
         };
 
         await docClient.update({

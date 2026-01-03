@@ -95,6 +95,25 @@ function StudentDetailsModal({ student, onClose, onUpdate }) {
                         </div>
 
                         <div className="details-section">
+                            <h3>Login Credentials</h3>
+                            <div className="details-grid">
+                                <div className="detail-item">
+                                    <label>Username (Roll Number)</label>
+                                    <span style={{fontFamily: 'monospace', fontWeight: '600'}}>{student.rollNumber}</span>
+                                </div>
+                                <div className="detail-item">
+                                    <label>Password</label>
+                                    <span style={{fontFamily: 'monospace', fontWeight: '600', color: '#059669'}}>
+                                        {student.plainPassword || 'Not Available'}
+                                    </span>
+                                </div>
+                            </div>
+                            <small style={{color: '#6b7280', fontSize: '0.85rem', display: 'block', marginTop: '8px'}}>
+                                Students use their roll number and password to log in to the student portal
+                            </small>
+                        </div>
+
+                        <div className="details-section">
                             <h3>Quick Actions</h3>
                             <div className="actions-grid">
                                 <button

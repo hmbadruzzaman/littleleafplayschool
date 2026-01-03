@@ -2,7 +2,6 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const { initializeLocalDB } = require('./utils/initLocalDB');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -92,27 +91,21 @@ app.use((error, req, res, next) => {
     });
 });
 
-// Initialize local database if needed, then start server
-async function startServer() {
-    await initializeLocalDB();
-
-    app.listen(PORT, () => {
-        console.log('╔═══════════════════════════════════════════════╗');
-        console.log('║   Little Leaf Play School Management API     ║');
-        console.log('╚═══════════════════════════════════════════════╝');
-        console.log(`\nServer running on port ${PORT}`);
-        console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-        console.log(`\nAPI Endpoints:`);
-        console.log(`  - Health: http://localhost:${PORT}/health`);
-        console.log(`  - Public: http://localhost:${PORT}/api/public`);
-        console.log(`  - Auth:   http://localhost:${PORT}/api/auth`);
-        console.log(`  - Student: http://localhost:${PORT}/api/student`);
-        console.log(`  - Teacher: http://localhost:${PORT}/api/teacher`);
-        console.log(`  - Admin:  http://localhost:${PORT}/api/admin`);
-        console.log('\n' + '═'.repeat(48));
-    });
-}
-
-startServer();
+// Start server
+app.listen(PORT, () => {
+    console.log('╔═══════════════════════════════════════════════╗');
+    console.log('║   Little Leaf Play School Management API     ║');
+    console.log('╚═══════════════════════════════════════════════╝');
+    console.log(`\nServer running on port ${PORT}`);
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`\nAPI Endpoints:`);
+    console.log(`  - Health: http://localhost:${PORT}/health`);
+    console.log(`  - Public: http://localhost:${PORT}/api/public`);
+    console.log(`  - Auth:   http://localhost:${PORT}/api/auth`);
+    console.log(`  - Student: http://localhost:${PORT}/api/student`);
+    console.log(`  - Teacher: http://localhost:${PORT}/api/teacher`);
+    console.log(`  - Admin:  http://localhost:${PORT}/api/admin`);
+    console.log('\n' + '═'.repeat(48));
+});
 
 module.exports = app;

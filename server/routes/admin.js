@@ -26,6 +26,7 @@ router.get('/students/:studentId/pending-fees', adminController.calculatePending
 // Fee structure management
 router.post('/fee-structure', adminController.createFeeStructure);
 router.get('/fee-structure', adminController.getAllFeeStructures);
+router.put('/fee-structure/:feeStructureId', adminController.updateFeeStructure);
 
 // Exam management
 router.post('/exams', adminController.createExam);

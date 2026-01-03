@@ -10,6 +10,7 @@ import RecordFeePaymentForm from '../components/forms/RecordFeePaymentForm';
 import AddExpenditureForm from '../components/forms/AddExpenditureForm';
 import StudentDetailsModal from '../components/modals/StudentDetailsModal';
 import ViewInquiriesModal from '../components/modals/ViewInquiriesModal';
+import EditFeeStructureModal from '../components/modals/EditFeeStructureModal';
 import './Dashboard.css';
 
 function AdminDashboard() {
@@ -24,6 +25,7 @@ function AdminDashboard() {
     const [showAddExam, setShowAddExam] = useState(false);
     const [showAddHoliday, setShowAddHoliday] = useState(false);
     const [showAddFee, setShowAddFee] = useState(false);
+    const [showEditFeeStructure, setShowEditFeeStructure] = useState(false);
     const [showRecordPayment, setShowRecordPayment] = useState(false);
     const [showAddExpenditure, setShowAddExpenditure] = useState(false);
     const [selectedStudent, setSelectedStudent] = useState(null);
@@ -96,8 +98,8 @@ function AdminDashboard() {
                 expenditure: expenditureRes.data
             });
 
-            // Count pending inquiries
-            const pendingCount = (inquiriesRes.data.data || []).filter(inq => inq.status === 'NEW').length;
+            // Count pending inquiries (NEW + IN_PROGRESS)
+            const pendingCount = (inquiriesRes.data.data || []).filter(inq => inq.status === 'NEW' || inq.status === 'IN_PROGRESS').length;
             setPendingInquiriesCount(pendingCount);
         } catch (error) {
             console.error('Error fetching data:', error);
@@ -231,7 +233,8 @@ function AdminDashboard() {
                                 <button className="action-btn" onClick={() => setShowAddTeacher(true)}>Create Teacher</button>
                                 <button className="action-btn" onClick={() => setShowAddExam(true)}>Create Exam</button>
                                 <button className="action-btn" onClick={() => setShowAddHoliday(true)}>Add Holiday</button>
-                                <button className="action-btn" onClick={() => setShowAddFee(true)}>Add Fee</button>
+                                <button className="action-btn" onClick={() => setShowAddFee(true)}>Add Fee Structure</button>
+                                <button className="action-btn" onClick={() => setShowEditFeeStructure(true)}>Edit Fee Structure</button>
                                 <button className="action-btn" onClick={() => setShowRecordPayment(true)}>Record Fee Payment</button>
                                 <button className="action-btn" onClick={() => setShowAddExpenditure(true)}>Add Expenditure</button>
                                 <button className="action-btn" onClick={() => setActiveTab('reports')}>View Reports</button>
@@ -453,6 +456,12 @@ function AdminDashboard() {
             {showAddFee && (
                 <AddFeeForm
                     onClose={() => setShowAddFee(false)}
+                    onSuccess={fetchData}
+                />
+            )}
+            {showEditFeeStructure && (
+                <EditFeeStructureModal
+                    onClose={() => setShowEditFeeStructure(false)}
                     onSuccess={fetchData}
                 />
             )}
