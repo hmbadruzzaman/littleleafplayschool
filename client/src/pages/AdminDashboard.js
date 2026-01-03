@@ -5,12 +5,11 @@ import AddStudentForm from '../components/forms/AddStudentForm';
 import AddTeacherForm from '../components/forms/AddTeacherForm';
 import AddExamForm from '../components/forms/AddExamForm';
 import AddHolidayForm from '../components/forms/AddHolidayForm';
-import AddFeeForm from '../components/forms/AddFeeForm';
 import RecordFeePaymentForm from '../components/forms/RecordFeePaymentForm';
 import AddExpenditureForm from '../components/forms/AddExpenditureForm';
 import StudentDetailsModal from '../components/modals/StudentDetailsModal';
 import ViewInquiriesModal from '../components/modals/ViewInquiriesModal';
-import EditFeeStructureModal from '../components/modals/EditFeeStructureModal';
+import ManageFeeStructureModal from '../components/modals/ManageFeeStructureModal';
 import './Dashboard.css';
 
 function AdminDashboard() {
@@ -24,8 +23,7 @@ function AdminDashboard() {
     const [showAddTeacher, setShowAddTeacher] = useState(false);
     const [showAddExam, setShowAddExam] = useState(false);
     const [showAddHoliday, setShowAddHoliday] = useState(false);
-    const [showAddFee, setShowAddFee] = useState(false);
-    const [showEditFeeStructure, setShowEditFeeStructure] = useState(false);
+    const [showManageFeeStructure, setShowManageFeeStructure] = useState(false);
     const [showRecordPayment, setShowRecordPayment] = useState(false);
     const [showAddExpenditure, setShowAddExpenditure] = useState(false);
     const [selectedStudent, setSelectedStudent] = useState(null);
@@ -233,8 +231,7 @@ function AdminDashboard() {
                                 <button className="action-btn" onClick={() => setShowAddTeacher(true)}>Create Teacher</button>
                                 <button className="action-btn" onClick={() => setShowAddExam(true)}>Create Exam</button>
                                 <button className="action-btn" onClick={() => setShowAddHoliday(true)}>Add Holiday</button>
-                                <button className="action-btn" onClick={() => setShowAddFee(true)}>Add Fee Structure</button>
-                                <button className="action-btn" onClick={() => setShowEditFeeStructure(true)}>Edit Fee Structure</button>
+                                <button className="action-btn" onClick={() => setShowManageFeeStructure(true)}>Manage Fee Structure</button>
                                 <button className="action-btn" onClick={() => setShowRecordPayment(true)}>Record Fee Payment</button>
                                 <button className="action-btn" onClick={() => setShowAddExpenditure(true)}>Add Expenditure</button>
                                 <button className="action-btn" onClick={() => setActiveTab('reports')}>View Reports</button>
@@ -453,15 +450,9 @@ function AdminDashboard() {
                     onSuccess={fetchData}
                 />
             )}
-            {showAddFee && (
-                <AddFeeForm
-                    onClose={() => setShowAddFee(false)}
-                    onSuccess={fetchData}
-                />
-            )}
-            {showEditFeeStructure && (
-                <EditFeeStructureModal
-                    onClose={() => setShowEditFeeStructure(false)}
+            {showManageFeeStructure && (
+                <ManageFeeStructureModal
+                    onClose={() => setShowManageFeeStructure(false)}
                     onSuccess={fetchData}
                 />
             )}
