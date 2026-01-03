@@ -63,17 +63,26 @@ function ViewInquiriesModal({ onClose }) {
             if (data.success) {
                 setMessage({ type: 'success', text: keepOpen ? 'Inquiry marked as in progress' : 'Inquiry marked as followed up' });
 
-                // Update local state
-                setInquiries(inquiries.map(inq =>
-                    inq.inquiryId === selectedInquiry.inquiryId
-                        ? {
+                // Update local state - add to follow-up history
+                setInquiries(inquiries.map(inq => {
+                    if (inq.inquiryId === selectedInquiry.inquiryId) {
+                        const updatedHistory = [...(inq.followUpHistory || [])];
+                        updatedHistory.push({
+                            timestamp: new Date().toISOString(),
+                            status: status,
+                            comment: followUpComment || '',
+                            adminAction: status === 'FOLLOWED_UP' ? 'Marked as Followed Up' : 'Marked as In Progress'
+                        });
+
+                        return {
                             ...inq,
                             status,
                             followedUpAt: new Date().toISOString(),
-                            comment: followUpComment
-                        }
-                        : inq
-                ));
+                            followUpHistory: updatedHistory
+                        };
+                    }
+                    return inq;
+                }));
 
                 setShowFollowUpModal(false);
                 setSelectedInquiry(null);
@@ -211,18 +220,30 @@ function ViewInquiriesModal({ onClose }) {
                                             </div>
                                         </div>
 
-                                        {inquiry.comment && (
+                                        {inquiry.followUpHistory && inquiry.followUpHistory.length > 0 && (
                                             <div className="detail-row full-width">
                                                 <div className="detail-item">
-                                                    <strong>Admin Comment:</strong>
-                                                    <p className="inquiry-message" style={{fontStyle: 'italic', color: '#059669'}}>{inquiry.comment}</p>
+                                                    <strong>Follow-up History:</strong>
+                                                    <div style={{marginTop: '10px', borderLeft: '3px solid #059669', paddingLeft: '15px'}}>
+                                                        {inquiry.followUpHistory.map((history, index) => (
+                                                            <div key={index} style={{marginBottom: '15px', paddingBottom: '15px', borderBottom: index < inquiry.followUpHistory.length - 1 ? '1px solid #e5e7eb' : 'none'}}>
+                                                                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px'}}>
+                                                                    <span style={{fontWeight: '600', color: '#059669', fontSize: '0.9rem'}}>
+                                                                        {history.adminAction}
+                                                                    </span>
+                                                                    <span style={{fontSize: '0.85rem', color: '#6b7280'}}>
+                                                                        {formatDate(history.timestamp)}
+                                                                    </span>
+                                                                </div>
+                                                                {history.comment && (
+                                                                    <p style={{margin: '5px 0 0 0', fontStyle: 'italic', color: '#374151'}}>
+                                                                        {history.comment}
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        )}
-
-                                        {inquiry.followedUpAt && (
-                                            <div className="followed-up-info">
-                                                Followed up on: {formatDate(inquiry.followedUpAt)}
                                             </div>
                                         )}
                                     </div>
