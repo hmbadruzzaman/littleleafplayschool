@@ -113,8 +113,76 @@ exports.updateStudent = async (req, res) => {
 exports.deleteStudent = async (req, res) => {
     try {
         const { studentId } = req.params;
-        await StudentModel.delete(studentId);
-        res.status(200).json(successResponse(null, 'Student deleted successfully'));
+        console.log('Delete student request for studentId:', studentId);
+
+        // Get student details first
+        const student = await StudentModel.findById(studentId);
+        console.log('Student found:', student ? 'Yes' : 'No');
+        if (!student) {
+            return res.status(404).json(errorResponse('Student not found'));
+        }
+
+        // Delete all related data
+        // 1. Delete all fee records
+        console.log('Deleting fees...');
+        const fees = await FeeModel.getByStudentId(studentId);
+        console.log(`Found ${fees.length} fee records`);
+        for (const fee of fees) {
+            await docClient.delete({
+                TableName: TABLES.FEES,
+                Key: { feeId: fee.feeId }
+            }).promise();
+        }
+
+        // 2. Delete all exam results
+        console.log('Deleting exam results...');
+        const ExamResultModel = require('../models/ExamResult');
+        const examResults = await ExamResultModel.getByStudentId(studentId);
+        console.log(`Found ${examResults.length} exam results`);
+        for (const result of examResults) {
+            await docClient.delete({
+                TableName: TABLES.EXAM_RESULTS,
+                Key: { resultId: result.resultId }
+            }).promise();
+        }
+
+        // 3. Delete all attendance records (if attendance table exists)
+        console.log('Deleting attendance records...');
+        if (TABLES.ATTENDANCE) {
+            const attendanceParams = {
+                TableName: TABLES.ATTENDANCE,
+                FilterExpression: 'studentId = :studentId',
+                ExpressionAttributeValues: {
+                    ':studentId': studentId
+                }
+            };
+            const attendanceResult = await docClient.scan(attendanceParams).promise();
+            console.log(`Found ${attendanceResult.Items.length} attendance records`);
+            for (const attendance of attendanceResult.Items) {
+                await docClient.delete({
+                    TableName: TABLES.ATTENDANCE,
+                    Key: { attendanceId: attendance.attendanceId }
+                }).promise();
+            }
+        } else {
+            console.log('Attendance table not defined, skipping...');
+        }
+
+        // 4. Delete user account
+        console.log('Deleting user account...');
+        await docClient.delete({
+            TableName: TABLES.USERS,
+            Key: { userId: `USER#${student.rollNumber}` }
+        }).promise();
+
+        // 5. Finally, delete the student record
+        console.log('Deleting student record...');
+        await docClient.delete({
+            TableName: TABLES.STUDENTS,
+            Key: { studentId: studentId }
+        }).promise();
+
+        res.status(200).json(successResponse(null, 'Student and all related data deleted successfully'));
     } catch (error) {
         console.error('Delete student error:', error);
         res.status(500).json(errorResponse('Failed to delete student', error));

@@ -12,6 +12,8 @@ function StudentDetailsModal({ student, onClose, onUpdate }) {
     const [showFeeDetails, setShowFeeDetails] = useState(false);
     const [showExamResults, setShowExamResults] = useState(false);
     const [showAttendance, setShowAttendance] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     if (!student) return null;
 
@@ -23,6 +25,41 @@ function StudentDetailsModal({ student, onClose, onUpdate }) {
     const handleEditSuccess = () => {
         setShowEditStudent(false);
         if (onUpdate) onUpdate();
+    };
+
+    const handleDeleteStudent = async () => {
+        setIsDeleting(true);
+        try {
+            const token = localStorage.getItem('token');
+            const API_URL = window.location.hostname === 'localhost'
+                ? 'http://localhost:5001/api'
+                : 'https://welittleleaf.com/api';
+
+            const encodedStudentId = encodeURIComponent(student.studentId);
+
+            const response = await fetch(`${API_URL}/admin/students/${encodedStudentId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                alert('Student deleted successfully along with all related data');
+                if (onUpdate) onUpdate();
+                onClose();
+            } else {
+                alert(data.message || 'Failed to delete student');
+            }
+        } catch (error) {
+            console.error('Error deleting student:', error);
+            alert('An error occurred while deleting the student');
+        } finally {
+            setIsDeleting(false);
+            setShowDeleteConfirm(false);
+        }
     };
 
     return (
@@ -150,7 +187,18 @@ function StudentDetailsModal({ student, onClose, onUpdate }) {
                         </div>
                     </div>
 
-                    <div className="modal-footer">
+                    <div className="modal-footer" style={{ justifyContent: 'space-between' }}>
+                        <button
+                            onClick={() => setShowDeleteConfirm(true)}
+                            className="btn btn-danger"
+                            style={{
+                                backgroundColor: '#ef4444',
+                                color: 'white',
+                                border: 'none'
+                            }}
+                        >
+                            🗑️ Delete Student
+                        </button>
                         <button onClick={onClose} className="btn btn-secondary">
                             Close
                         </button>
@@ -189,6 +237,64 @@ function StudentDetailsModal({ student, onClose, onUpdate }) {
                     student={student}
                     onClose={() => setShowAttendance(false)}
                 />
+            )}
+
+            {showDeleteConfirm && (
+                <div className="modal-overlay" onClick={() => setShowDeleteConfirm(false)}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+                        <div className="modal-header">
+                            <h2 style={{ color: '#ef4444' }}>⚠️ Confirm Delete</h2>
+                            <button className="close-btn" onClick={() => setShowDeleteConfirm(false)}>&times;</button>
+                        </div>
+                        <div className="modal-body">
+                            <p style={{ marginBottom: '15px' }}>
+                                Are you sure you want to delete <strong>{student.fullName}</strong>?
+                            </p>
+                            <div style={{
+                                backgroundColor: '#fef2f2',
+                                border: '1px solid #fecaca',
+                                borderRadius: '8px',
+                                padding: '15px',
+                                marginBottom: '15px'
+                            }}>
+                                <p style={{ margin: '0 0 10px 0', fontWeight: '600', color: '#991b1b' }}>
+                                    This action will permanently delete:
+                                </p>
+                                <ul style={{ margin: '0', paddingLeft: '20px', color: '#7f1d1d' }}>
+                                    <li>Student profile and credentials</li>
+                                    <li>All fee records (paid and pending)</li>
+                                    <li>All exam results</li>
+                                    <li>All attendance records</li>
+                                    <li>User login account</li>
+                                </ul>
+                            </div>
+                            <p style={{ color: '#991b1b', fontWeight: '600', margin: '10px 0' }}>
+                                This action cannot be undone!
+                            </p>
+                        </div>
+                        <div className="modal-footer">
+                            <button
+                                onClick={() => setShowDeleteConfirm(false)}
+                                className="btn btn-secondary"
+                                disabled={isDeleting}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleDeleteStudent}
+                                className="btn btn-danger"
+                                disabled={isDeleting}
+                                style={{
+                                    backgroundColor: '#dc2626',
+                                    color: 'white',
+                                    border: 'none'
+                                }}
+                            >
+                                {isDeleting ? 'Deleting...' : 'Yes, Delete Permanently'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </>
     );
