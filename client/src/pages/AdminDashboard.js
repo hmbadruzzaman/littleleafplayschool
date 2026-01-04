@@ -31,6 +31,8 @@ function AdminDashboard() {
     const [studentSearchTerm, setStudentSearchTerm] = useState('');
     const [showInquiries, setShowInquiries] = useState(false);
     const [pendingInquiriesCount, setPendingInquiriesCount] = useState(0);
+    const [studentSortField, setStudentSortField] = useState('rollNumber');
+    const [studentSortDirection, setStudentSortDirection] = useState('asc');
 
     useEffect(() => {
         fetchData();
@@ -104,6 +106,45 @@ function AdminDashboard() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleStudentSort = (field) => {
+        if (studentSortField === field) {
+            // Toggle direction if clicking the same field
+            setStudentSortDirection(studentSortDirection === 'asc' ? 'desc' : 'asc');
+        } else {
+            // Set new field and default to ascending
+            setStudentSortField(field);
+            setStudentSortDirection('asc');
+        }
+    };
+
+    const getSortedStudents = () => {
+        const filtered = students.filter(student => {
+            const searchLower = studentSearchTerm.toLowerCase();
+            return (
+                student.fullName.toLowerCase().includes(searchLower) ||
+                student.rollNumber.toLowerCase().includes(searchLower) ||
+                (student.parentName && student.parentName.toLowerCase().includes(searchLower))
+            );
+        });
+
+        return filtered.sort((a, b) => {
+            let aValue = a[studentSortField];
+            let bValue = b[studentSortField];
+
+            // Handle null/undefined values
+            if (!aValue) aValue = '';
+            if (!bValue) bValue = '';
+
+            // Convert to lowercase for string comparison
+            if (typeof aValue === 'string') aValue = aValue.toLowerCase();
+            if (typeof bValue === 'string') bValue = bValue.toLowerCase();
+
+            if (aValue < bValue) return studentSortDirection === 'asc' ? -1 : 1;
+            if (aValue > bValue) return studentSortDirection === 'asc' ? 1 : -1;
+            return 0;
+        });
     };
 
     if (loading) {
@@ -276,54 +317,50 @@ function AdminDashboard() {
                         <table className="table">
                             <thead>
                                 <tr>
-                                    <th>Roll Number</th>
-                                    <th>Name</th>
-                                    <th>Class</th>
-                                    <th>Parent Name</th>
-                                    <th>Parent Phone</th>
-                                    <th>Status</th>
+                                    <th onClick={() => handleStudentSort('rollNumber')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                                        Roll Number {studentSortField === 'rollNumber' && (studentSortDirection === 'asc' ? '↑' : '↓')}
+                                    </th>
+                                    <th onClick={() => handleStudentSort('fullName')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                                        Name {studentSortField === 'fullName' && (studentSortDirection === 'asc' ? '↑' : '↓')}
+                                    </th>
+                                    <th onClick={() => handleStudentSort('class')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                                        Class {studentSortField === 'class' && (studentSortDirection === 'asc' ? '↑' : '↓')}
+                                    </th>
+                                    <th onClick={() => handleStudentSort('parentName')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                                        Parent Name {studentSortField === 'parentName' && (studentSortDirection === 'asc' ? '↑' : '↓')}
+                                    </th>
+                                    <th onClick={() => handleStudentSort('parentPhone')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                                        Parent Phone {studentSortField === 'parentPhone' && (studentSortDirection === 'asc' ? '↑' : '↓')}
+                                    </th>
+                                    <th onClick={() => handleStudentSort('status')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                                        Status {studentSortField === 'status' && (studentSortDirection === 'asc' ? '↑' : '↓')}
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {students
-                                    .filter(student => {
-                                        const searchLower = studentSearchTerm.toLowerCase();
-                                        return (
-                                            student.fullName.toLowerCase().includes(searchLower) ||
-                                            student.rollNumber.toLowerCase().includes(searchLower) ||
-                                            (student.parentName && student.parentName.toLowerCase().includes(searchLower))
-                                        );
-                                    })
-                                    .map((student) => (
-                                        <tr
-                                            key={student.studentId}
-                                            onClick={() => setSelectedStudent(student)}
-                                            style={{ cursor: 'pointer' }}
-                                            className="clickable-row"
-                                        >
-                                            <td>{student.rollNumber}</td>
-                                            <td>{student.fullName}</td>
-                                            <td>{student.class}</td>
-                                            <td>{student.parentName}</td>
-                                            <td>{student.parentPhone}</td>
-                                            <td>
-                                                <span className={`status-badge ${student.status.toLowerCase()}`}>
-                                                    {student.status}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    ))}
+                                {getSortedStudents().map((student) => (
+                                    <tr
+                                        key={student.studentId}
+                                        onClick={() => setSelectedStudent(student)}
+                                        style={{ cursor: 'pointer' }}
+                                        className="clickable-row"
+                                    >
+                                        <td>{student.rollNumber}</td>
+                                        <td>{student.fullName}</td>
+                                        <td>{student.class}</td>
+                                        <td>{student.parentName}</td>
+                                        <td>{student.parentPhone}</td>
+                                        <td>
+                                            <span className={`status-badge ${student.status.toLowerCase()}`}>
+                                                {student.status}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
                             </tbody>
                         </table>
 
-                        {students.filter(student => {
-                            const searchLower = studentSearchTerm.toLowerCase();
-                            return (
-                                student.fullName.toLowerCase().includes(searchLower) ||
-                                student.rollNumber.toLowerCase().includes(searchLower) ||
-                                (student.parentName && student.parentName.toLowerCase().includes(searchLower))
-                            );
-                        }).length === 0 && (
+                        {getSortedStudents().length === 0 && (
                             <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>
                                 No students found matching "{studentSearchTerm}"
                             </div>

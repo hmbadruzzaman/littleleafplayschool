@@ -779,3 +779,17 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* Sortable Table Headers */
+.table thead th[style*="cursor: pointer"] {
+    transition: background-color 0.2s;
+    position: relative;
+}
+
+.table thead th[style*="cursor: pointer"]:hover {
+    background-color: #f3f4f6;
+}
+
+.table thead th[style*="cursor: pointer"]:active {
+    background-color: #e5e7eb;
+}
