@@ -34,6 +34,7 @@ exports.getDashboard = async (req, res) => {
         // Calculate pending fees using the utility function
         const pendingData = await calculatePendingFeesForStudent(student);
         const totalPending = pendingData.totalPending;
+        const pendingBreakdown = pendingData.breakdown;
 
         // Get exam results
         const examResults = await ExamResultModel.getByStudentId(student.studentId);
@@ -54,7 +55,8 @@ exports.getDashboard = async (req, res) => {
             fees: {
                 paid: paidFees,
                 totalPending: totalPending,
-                totalPaid: totalPaid
+                totalPaid: totalPaid,
+                pendingBreakdown: pendingBreakdown
             },
             exams: {
                 results: examResults,
