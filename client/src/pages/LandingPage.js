@@ -184,7 +184,16 @@ function LandingPage() {
                             {schoolInfo?.website && (
                                 <div className="contact-item">
                                     <h3>Website</h3>
-                                    <p>{schoolInfo.website}</p>
+                                    <p>
+                                        <a
+                                            href={schoolInfo.website.startsWith('http') ? schoolInfo.website : `https://${schoolInfo.website}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            style={{ color: 'var(--primary-color)', textDecoration: 'underline' }}
+                                        >
+                                            {schoolInfo.website}
+                                        </a>
+                                    </p>
                                 </div>
                             )}
                         </div>
