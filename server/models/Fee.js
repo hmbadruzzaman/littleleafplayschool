@@ -151,13 +151,14 @@ class FeeModel {
         };
 
         result.Items.forEach(fee => {
-            report.totalEarnings += fee.amount;
+            const amount = parseFloat(fee.amount) || 0;
+            report.totalEarnings += amount;
             if (fee.feeType === 'ADMISSION') {
-                report.admissionFees += fee.amount;
+                report.admissionFees += amount;
             } else if (fee.feeType === 'MONTHLY_TUITION') {
-                report.monthlyFees += fee.amount;
+                report.monthlyFees += amount;
             } else if (fee.feeType === 'MISC') {
-                report.miscFees += fee.amount;
+                report.miscFees += amount;
             }
         });
 
