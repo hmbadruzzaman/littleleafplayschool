@@ -14,7 +14,8 @@ function EditStudentForm({ student, onClose, onSuccess }) {
         inactiveDate: student.inactiveDate || '',
         password: '',
         transportEnabled: student.transportEnabled || false,
-        transportStartMonth: student.transportStartMonth || ''
+        transportStartMonth: student.transportStartMonth || '',
+        excludeAdmissionFee: student.excludeAdmissionFee || false
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -38,7 +39,11 @@ function EditStudentForm({ student, onClose, onSuccess }) {
                 ? 'http://localhost:5001/api'
                 : 'https://welittleleaf.com/api';
 
-            const response = await fetch(`${API_URL}/admin/students/${student.studentId}`, {
+            console.log('Submitting update for student:', student.studentId);
+            const encodedStudentId = encodeURIComponent(student.studentId);
+            console.log('Encoded studentId:', encodedStudentId);
+
+            const response = await fetch(`${API_URL}/admin/students/${encodedStudentId}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -252,6 +257,25 @@ function EditStudentForm({ student, onClose, onSuccess }) {
                             </small>
                         </div>
                     )}
+
+                    <div className="form-group">
+                        <div style={{display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px'}}>
+                            <input
+                                type="checkbox"
+                                id="excludeAdmissionFee"
+                                name="excludeAdmissionFee"
+                                checked={formData.excludeAdmissionFee}
+                                onChange={handleChange}
+                                style={{width: 'auto', margin: 0}}
+                            />
+                            <label htmlFor="excludeAdmissionFee" style={{margin: 0, fontWeight: '500'}}>
+                                Exclude Admission Fee in Pending
+                            </label>
+                        </div>
+                        <small style={{color: '#6b7280', fontSize: '0.85rem', display: 'block', marginBottom: '10px'}}>
+                            Check this box to exclude admission fee from pending fee calculations (e.g., if admission fee was already paid)
+                        </small>
+                    </div>
 
                     <div className="form-actions">
                         <button type="button" onClick={onClose} className="btn btn-secondary">

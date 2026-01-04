@@ -294,9 +294,9 @@ function AdminDashboard() {
                                             (student.parentName && student.parentName.toLowerCase().includes(searchLower))
                                         );
                                     })
-                                    .map((student, index) => (
+                                    .map((student) => (
                                         <tr
-                                            key={index}
+                                            key={student.studentId}
                                             onClick={() => setSelectedStudent(student)}
                                             style={{ cursor: 'pointer' }}
                                             className="clickable-row"
@@ -348,8 +348,8 @@ function AdminDashboard() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {teachers.map((teacher, index) => (
-                                    <tr key={index}>
+                                {teachers.map((teacher) => (
+                                    <tr key={teacher.teacherId}>
                                         <td>{teacher.employeeId}</td>
                                         <td>{teacher.fullName}</td>
                                         <td>{teacher.email}</td>

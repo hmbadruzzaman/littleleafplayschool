@@ -14,7 +14,8 @@ function AddStudentForm({ onClose, onSuccess }) {
         password: 'password123',
         status: 'ACTIVE',
         transportEnabled: false,
-        transportStartMonth: ''
+        transportStartMonth: '',
+        excludeAdmissionFee: false
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -267,6 +268,25 @@ function AddStudentForm({ onClose, onSuccess }) {
                         </div>
                         <small style={{color: '#6b7280', fontSize: '0.85rem', display: 'block', marginBottom: '10px'}}>
                             Check this box if the student will use school transport
+                        </small>
+                    </div>
+
+                    <div className="form-group">
+                        <div style={{display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px'}}>
+                            <input
+                                type="checkbox"
+                                id="excludeAdmissionFee"
+                                name="excludeAdmissionFee"
+                                checked={formData.excludeAdmissionFee}
+                                onChange={handleChange}
+                                style={{width: 'auto', margin: 0}}
+                            />
+                            <label htmlFor="excludeAdmissionFee" style={{margin: 0, fontWeight: '500'}}>
+                                Exclude Admission Fee in Pending
+                            </label>
+                        </div>
+                        <small style={{color: '#6b7280', fontSize: '0.85rem', display: 'block', marginBottom: '10px'}}>
+                            Check this box to exclude admission fee from pending fee calculations (e.g., if admission fee was already paid)
                         </small>
                     </div>
 

@@ -52,6 +52,9 @@ exports.createStudent = async (req, res) => {
             studentData.transportEnabled = false;
         }
 
+        // Add excludeAdmissionFee field
+        studentData.excludeAdmissionFee = req.body.excludeAdmissionFee || false;
+
         // Store plain password for admin reference
         studentData.plainPassword = password;
 
@@ -79,6 +82,10 @@ exports.updateStudent = async (req, res) => {
         const { studentId } = req.params;
         const updates = req.body;
 
+        console.log('=== UPDATE STUDENT DEBUG ===');
+        console.log('Received studentId from params:', studentId);
+        console.log('Updates received:', JSON.stringify(updates, null, 2));
+
         // Handle password change if provided
         if (updates.password && updates.password.trim() !== '') {
             // Get student to find their roll number
@@ -99,7 +106,9 @@ exports.updateStudent = async (req, res) => {
         }
 
         // Update student profile
+        console.log('About to call StudentModel.update with studentId:', studentId);
         const student = await StudentModel.update(studentId, updates);
+        console.log('Updated student returned:', JSON.stringify(student, null, 2));
         res.status(200).json(successResponse(student, 'Student updated successfully'));
     } catch (error) {
         console.error('Update student error:', error);
@@ -391,6 +400,12 @@ exports.calculatePendingFees = async (req, res) => {
         for (const structure of feeStructures) {
             if (structure.frequency === 'ONE_TIME') {
                 // For one-time fees (Admission, Annual, etc.)
+                // Check if this student has excludeAdmissionFee flag and skip ADMISSION_FEE
+                if (student.excludeAdmissionFee && structure.feeType === 'ADMISSION_FEE') {
+                    console.log(`${structure.feeType}: Excluded from pending due to excludeAdmissionFee flag`);
+                    continue;
+                }
+
                 // If ANY payment with status=PAID exists, consider it fully paid regardless of amount
                 const paidFees = studentFees.filter(f =>
                     f.feeType === structure.feeType && f.paymentStatus === 'PAID'
