@@ -4,12 +4,12 @@ import { adminAPI } from '../services/api';
 import AddStudentForm from '../components/forms/AddStudentForm';
 import AddTeacherForm from '../components/forms/AddTeacherForm';
 import AddExamForm from '../components/forms/AddExamForm';
-import AddHolidayForm from '../components/forms/AddHolidayForm';
 import RecordFeePaymentForm from '../components/forms/RecordFeePaymentForm';
 import AddExpenditureForm from '../components/forms/AddExpenditureForm';
 import StudentDetailsModal from '../components/modals/StudentDetailsModal';
 import ViewInquiriesModal from '../components/modals/ViewInquiriesModal';
 import ManageFeeStructureModal from '../components/modals/ManageFeeStructureModal';
+import ManageHolidaysModal from '../components/modals/ManageHolidaysModal';
 import './Dashboard.css';
 
 function AdminDashboard() {
@@ -22,8 +22,8 @@ function AdminDashboard() {
     const [showAddStudent, setShowAddStudent] = useState(false);
     const [showAddTeacher, setShowAddTeacher] = useState(false);
     const [showAddExam, setShowAddExam] = useState(false);
-    const [showAddHoliday, setShowAddHoliday] = useState(false);
     const [showManageFeeStructure, setShowManageFeeStructure] = useState(false);
+    const [showManageHolidays, setShowManageHolidays] = useState(false);
     const [showRecordPayment, setShowRecordPayment] = useState(false);
     const [showAddExpenditure, setShowAddExpenditure] = useState(false);
     const [selectedStudent, setSelectedStudent] = useState(null);
@@ -230,7 +230,7 @@ function AdminDashboard() {
                                 <button className="action-btn" onClick={() => setShowAddStudent(true)}>Create Student</button>
                                 <button className="action-btn" onClick={() => setShowAddTeacher(true)}>Create Teacher</button>
                                 <button className="action-btn" onClick={() => setShowAddExam(true)}>Create Exam</button>
-                                <button className="action-btn" onClick={() => setShowAddHoliday(true)}>Add Holiday</button>
+                                <button className="action-btn" onClick={() => setShowManageHolidays(true)}>Manage Holidays</button>
                                 <button className="action-btn" onClick={() => setShowManageFeeStructure(true)}>Manage Fee Structure</button>
                                 <button className="action-btn" onClick={() => setShowRecordPayment(true)}>Record Fee Payment</button>
                                 <button className="action-btn" onClick={() => setShowAddExpenditure(true)}>Add Expenditure</button>
@@ -444,9 +444,9 @@ function AdminDashboard() {
                     onSuccess={fetchData}
                 />
             )}
-            {showAddHoliday && (
-                <AddHolidayForm
-                    onClose={() => setShowAddHoliday(false)}
+            {showManageHolidays && (
+                <ManageHolidaysModal
+                    onClose={() => setShowManageHolidays(false)}
                     onSuccess={fetchData}
                 />
             )}

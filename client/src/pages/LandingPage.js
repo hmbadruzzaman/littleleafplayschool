@@ -7,6 +7,7 @@ import './LandingPage.css';
 function LandingPage() {
     const [schoolInfo, setSchoolInfo] = useState(null);
     const [gallery, setGallery] = useState([]);
+    const [holidays, setHolidays] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showInquiryForm, setShowInquiryForm] = useState(false);
 
@@ -16,13 +17,15 @@ function LandingPage() {
 
     const fetchData = async () => {
         try {
-            const [infoRes, galleryRes] = await Promise.all([
+            const [infoRes, galleryRes, holidaysRes] = await Promise.all([
                 publicAPI.getSchoolInfo(),
-                publicAPI.getGallery()
+                publicAPI.getGallery(),
+                publicAPI.getHolidays()
             ]);
 
             setSchoolInfo(infoRes.data.data);
             setGallery(galleryRes.data.data); // Show all gallery images
+            setHolidays(holidaysRes.data.data || []);
         } catch (error) {
             console.error('Error fetching data:', error);
         } finally {
@@ -110,6 +113,55 @@ function LandingPage() {
                     </div>
                 </div>
             </section>
+
+            {/* School Holidays Section */}
+            {holidays.length > 0 && (
+                <section className="holidays section">
+                    <div className="container">
+                        <h2 className="section-title">School Holidays</h2>
+                        <div className="holidays-grid">
+                            {holidays
+                                .filter(holiday => {
+                                    const today = new Date();
+                                    today.setHours(0, 0, 0, 0);
+                                    const [year, month, day] = holiday.holidayDate.split('-');
+                                    const holidayDate = new Date(year, month - 1, day);
+                                    return holidayDate >= today;
+                                })
+                                .sort((a, b) => {
+                                    const [yearA, monthA, dayA] = a.holidayDate.split('-');
+                                    const [yearB, monthB, dayB] = b.holidayDate.split('-');
+                                    const dateA = new Date(yearA, monthA - 1, dayA);
+                                    const dateB = new Date(yearB, monthB - 1, dayB);
+                                    return dateA - dateB;
+                                })
+                                .map((holiday, index) => {
+                                    const [, month, day] = holiday.holidayDate.split('-');
+                                    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                                    return (
+                                        <div key={index} className="holiday-card">
+                                            <div className="holiday-date">
+                                                <div className="holiday-day">
+                                                    {parseInt(day)}
+                                                </div>
+                                                <div className="holiday-month">
+                                                    {months[parseInt(month) - 1]}
+                                                </div>
+                                            </div>
+                                            <div className="holiday-details">
+                                                <h3 className="holiday-name">{holiday.holidayName}</h3>
+                                                <p className="holiday-type">{holiday.holidayType.replace(/_/g, ' ')}</p>
+                                                {holiday.description && (
+                                                    <p className="holiday-description">{holiday.description}</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                        </div>
+                    </div>
+                </section>
+            )}
 
             {/* Contact Section */}
             <section className="contact section">

@@ -204,6 +204,93 @@
     background: white;
 }
 
+/* School Holidays Section */
+.holidays {
+    background: #f8f9fa;
+}
+
+.holidays-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.holiday-card {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: stretch;
+    border-left: 4px solid var(--primary-color);
+}
+
+.holiday-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}
+
+.holiday-date {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+    color: white;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 100px;
+    text-align: center;
+}
+
+.holiday-day {
+    font-size: 42px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 5px;
+}
+
+.holiday-month {
+    font-size: 16px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.holiday-details {
+    padding: 20px 24px;
+    flex: 1;
+}
+
+.holiday-name {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin: 0 0 10px 0;
+}
+
+.holiday-type {
+    display: inline-block;
+    padding: 4px 12px;
+    background: #e8f5e9;
+    color: #2e7d32;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+}
+
+.holiday-description {
+    color: var(--text-light);
+    font-size: 14px;
+    line-height: 1.6;
+    margin: 10px 0 0 0;
+}
+
 .footer {
     background: var(--text-dark);
     color: white;
@@ -231,6 +318,36 @@
 
     .personnel-image {
         height: 200px;
+    }
+
+    .holidays-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .holiday-card {
+        flex-direction: row;
+    }
+
+    .holiday-date {
+        min-width: 80px;
+        padding: 16px 12px;
+    }
+
+    .holiday-day {
+        font-size: 32px;
+    }
+
+    .holiday-month {
+        font-size: 13px;
+    }
+
+    .holiday-details {
+        padding: 16px 20px;
+    }
+
+    .holiday-name {
+        font-size: 18px;
     }
 
     .gallery-grid {

@@ -35,6 +35,7 @@ router.get('/exams', adminController.getAllExams);
 // Holiday management
 router.post('/holidays', adminController.addHoliday);
 router.get('/holidays', adminController.getAllHolidays);
+router.put('/holidays/:holidayId', adminController.updateHoliday);
 
 // Expenditure management
 router.post('/expenditures', adminController.createExpenditure);

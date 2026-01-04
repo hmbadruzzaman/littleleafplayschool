@@ -620,6 +620,39 @@ exports.getAllHolidays = async (req, res) => {
     }
 };
 
+exports.updateHoliday = async (req, res) => {
+    try {
+        const { holidayId } = req.params;
+        const { holidayName, holidayDate, holidayType, description } = req.body;
+
+        if (!holidayName || !holidayDate || !holidayType) {
+            return res.status(400).json(errorResponse('Holiday name, date, and type are required'));
+        }
+
+        const updateExpression = 'SET holidayName = :holidayName, holidayDate = :holidayDate, holidayType = :holidayType, description = :description, updatedAt = :updatedAt';
+        const expressionAttributeValues = {
+            ':holidayName': holidayName,
+            ':holidayDate': holidayDate,
+            ':holidayType': holidayType,
+            ':description': description || '',
+            ':updatedAt': new Date().toISOString()
+        };
+
+        const result = await docClient.update({
+            TableName: TABLES.HOLIDAYS,
+            Key: { holidayId },
+            UpdateExpression: updateExpression,
+            ExpressionAttributeValues: expressionAttributeValues,
+            ReturnValues: 'ALL_NEW'
+        }).promise();
+
+        res.status(200).json(successResponse(result.Attributes, 'Holiday updated successfully'));
+    } catch (error) {
+        console.error('Update holiday error:', error);
+        res.status(500).json(errorResponse('Failed to update holiday', error));
+    }
+};
+
 // Reports
 exports.getEarningsReport = async (req, res) => {
     try {
