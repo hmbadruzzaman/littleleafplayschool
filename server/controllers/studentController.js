@@ -4,6 +4,7 @@ const ExamModel = require('../models/Exam');
 const ExamResultModel = require('../models/ExamResult');
 const { docClient, TABLES } = require('../config/dynamodb');
 const { successResponse, errorResponse } = require('../utils/helpers');
+const { calculatePendingFeesForStudent } = require('../utils/feeCalculations');
 
 // Get student dashboard data
 exports.getDashboard = async (req, res) => {
@@ -25,10 +26,14 @@ exports.getDashboard = async (req, res) => {
             return res.status(404).json(errorResponse('Student not found'));
         }
 
-        // Get fees
+        // Get paid fees
         const allFees = await FeeModel.getByStudentId(student.studentId);
-        const pendingFees = allFees.filter(f => f.paymentStatus === 'PENDING');
         const paidFees = allFees.filter(f => f.paymentStatus === 'PAID');
+        const totalPaid = paidFees.reduce((sum, f) => sum + (parseFloat(f.amount) || 0), 0);
+
+        // Calculate pending fees using the utility function
+        const pendingData = await calculatePendingFeesForStudent(student);
+        const totalPending = pendingData.totalPending;
 
         // Get exam results
         const examResults = await ExamResultModel.getByStudentId(student.studentId);
@@ -47,10 +52,9 @@ exports.getDashboard = async (req, res) => {
         const dashboardData = {
             student,
             fees: {
-                pending: pendingFees,
                 paid: paidFees,
-                totalPending: pendingFees.reduce((sum, f) => sum + f.amount, 0),
-                totalPaid: paidFees.reduce((sum, f) => sum + f.amount, 0)
+                totalPending: totalPending,
+                totalPaid: totalPaid
             },
             exams: {
                 results: examResults,

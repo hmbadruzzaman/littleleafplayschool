@@ -82,10 +82,6 @@ exports.updateStudent = async (req, res) => {
         const { studentId } = req.params;
         const updates = req.body;
 
-        console.log('=== UPDATE STUDENT DEBUG ===');
-        console.log('Received studentId from params:', studentId);
-        console.log('Updates received:', JSON.stringify(updates, null, 2));
-
         // Handle password change if provided
         if (updates.password && updates.password.trim() !== '') {
             // Get student to find their roll number
@@ -106,9 +102,7 @@ exports.updateStudent = async (req, res) => {
         }
 
         // Update student profile
-        console.log('About to call StudentModel.update with studentId:', studentId);
         const student = await StudentModel.update(studentId, updates);
-        console.log('Updated student returned:', JSON.stringify(student, null, 2));
         res.status(200).json(successResponse(student, 'Student updated successfully'));
     } catch (error) {
         console.error('Update student error:', error);

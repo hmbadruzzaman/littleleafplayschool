@@ -39,9 +39,7 @@ function EditStudentForm({ student, onClose, onSuccess }) {
                 ? 'http://localhost:5001/api'
                 : 'https://welittleleaf.com/api';
 
-            console.log('Submitting update for student:', student.studentId);
             const encodedStudentId = encodeURIComponent(student.studentId);
-            console.log('Encoded studentId:', encodedStudentId);
 
             const response = await fetch(`${API_URL}/admin/students/${encodedStudentId}`, {
                 method: 'PUT',

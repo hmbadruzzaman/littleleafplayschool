@@ -79,10 +79,6 @@ class StudentModel {
 
     // Update student
     static async update(studentId, updates) {
-        console.log('=== Student.update() DEBUG ===');
-        console.log('Received studentId:', studentId);
-        console.log('Received updates:', updates);
-
         const updateExpression = [];
         const expressionAttributeNames = {};
         const expressionAttributeValues = {};
@@ -106,10 +102,7 @@ class StudentModel {
             ReturnValues: 'ALL_NEW'
         };
 
-        console.log('DynamoDB update params:', JSON.stringify(params, null, 2));
-
         const result = await docClient.update(params).promise();
-        console.log('DynamoDB update result:', JSON.stringify(result, null, 2));
         return result.Attributes;
     }
 
