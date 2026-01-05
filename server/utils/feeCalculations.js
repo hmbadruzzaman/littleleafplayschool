@@ -101,24 +101,26 @@ async function calculatePendingFeesForStudent(student) {
                     f.academicYear && f.academicYear.includes(year.toString())
                 );
 
-                const paidThisMonth = monthPayments
-                    .filter(f => f.paymentStatus === 'PAID')
-                    .reduce((sum, f) => sum + parseFloat(f.amount || 0), 0);
+                // Check if there's any payment with PAID status for this month
+                const hasPaidStatus = monthPayments.some(f => f.paymentStatus === 'PAID');
 
-                const pendingThisMonth = monthPayments
-                    .filter(f => f.paymentStatus !== 'PAID')
-                    .reduce((sum, f) => sum + parseFloat(f.amount || 0), 0);
-
-                const amountDue = structure.amount;
-                const totalRecorded = paidThisMonth + pendingThisMonth;
-
+                // If any payment has PAID status, consider this month as fully paid (pending = 0)
                 let monthlyPending = 0;
-                if (paidThisMonth >= amountDue) {
+                if (hasPaidStatus) {
                     monthlyPending = 0;
-                } else if (totalRecorded < amountDue) {
-                    monthlyPending = amountDue - paidThisMonth;
                 } else {
-                    monthlyPending = pendingThisMonth;
+                    // No PAID status found, calculate pending
+                    const pendingThisMonth = monthPayments
+                        .filter(f => f.paymentStatus === 'PENDING')
+                        .reduce((sum, f) => sum + parseFloat(f.amount || 0), 0);
+
+                    const amountDue = structure.amount;
+
+                    if (pendingThisMonth >= amountDue) {
+                        monthlyPending = 0;
+                    } else {
+                        monthlyPending = amountDue - pendingThisMonth;
+                    }
                 }
 
                 if (monthlyPending > 0) {
