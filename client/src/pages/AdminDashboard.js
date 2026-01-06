@@ -5,6 +5,7 @@ import AddStudentForm from '../components/forms/AddStudentForm';
 import AddTeacherForm from '../components/forms/AddTeacherForm';
 import AddExamForm from '../components/forms/AddExamForm';
 import RecordFeePaymentForm from '../components/forms/RecordFeePaymentForm';
+import InquiryForm from '../components/forms/InquiryForm';
 import StudentDetailsModal from '../components/modals/StudentDetailsModal';
 import ViewInquiriesModal from '../components/modals/ViewInquiriesModal';
 import ManageFeeStructureModal from '../components/modals/ManageFeeStructureModal';
@@ -30,6 +31,7 @@ function AdminDashboard() {
     const [timePeriod, setTimePeriod] = useState('current-year');
     const [studentSearchTerm, setStudentSearchTerm] = useState('');
     const [showInquiries, setShowInquiries] = useState(false);
+    const [showAddInquiry, setShowAddInquiry] = useState(false);
     const [pendingInquiriesCount, setPendingInquiriesCount] = useState(0);
     const [studentSortField, setStudentSortField] = useState('rollNumber');
     const [studentSortDirection, setStudentSortDirection] = useState('asc');
@@ -445,12 +447,20 @@ function AdminDashboard() {
                     <div className="card">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                             <h2 style={{ margin: 0 }}>Admission Inquiries</h2>
-                            <button
-                                className="btn btn-primary"
-                                onClick={() => setShowInquiries(true)}
-                            >
-                                View All Inquiries
-                            </button>
+                            <div style={{ display: 'flex', gap: '0.75rem' }}>
+                                <button
+                                    className="btn btn-primary"
+                                    onClick={() => setShowAddInquiry(true)}
+                                >
+                                    Add Inquiry
+                                </button>
+                                <button
+                                    className="btn btn-primary"
+                                    onClick={() => setShowInquiries(true)}
+                                >
+                                    View All Inquiries
+                                </button>
+                            </div>
                         </div>
                         <p style={{ color: '#6b7280', marginTop: 0 }}>
                             {pendingInquiriesCount > 0
@@ -509,6 +519,14 @@ function AdminDashboard() {
                     student={selectedStudent}
                     onClose={() => setSelectedStudent(null)}
                     onUpdate={fetchData}
+                />
+            )}
+            {showAddInquiry && (
+                <InquiryForm
+                    onClose={() => {
+                        setShowAddInquiry(false);
+                        fetchData(); // Refresh to update pending count
+                    }}
                 />
             )}
             {showInquiries && (
