@@ -233,109 +233,6 @@ function ManageExpendituresModal({ onClose }) {
                     </div>
                 )}
 
-                <div style={{ padding: '0 1.5rem 1rem', borderBottom: '1px solid #e5e7eb' }}>
-                    <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                        <div style={{ flex: '1', minWidth: '200px' }}>
-                            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#374151', marginBottom: '0.25rem' }}>
-                                Filter by Type
-                            </label>
-                            <select
-                                value={filterType}
-                                onChange={(e) => setFilterType(e.target.value)}
-                                style={{
-                                    width: '100%',
-                                    padding: '0.5rem',
-                                    border: '1px solid #d1d5db',
-                                    borderRadius: '0.375rem',
-                                    fontSize: '0.875rem'
-                                }}
-                            >
-                                <option value="ALL">All Types</option>
-                                <option value="SALARY">Salary</option>
-                                <option value="INFRASTRUCTURE">Infrastructure</option>
-                                <option value="UTILITIES">Utilities</option>
-                                <option value="SUPPLIES">Supplies</option>
-                                <option value="MAINTENANCE">Maintenance</option>
-                                <option value="MISC">Miscellaneous</option>
-                            </select>
-                        </div>
-
-                        <div style={{ flex: '1', minWidth: '200px' }}>
-                            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#374151', marginBottom: '0.25rem' }}>
-                                Filter by Month
-                            </label>
-                            <input
-                                type="month"
-                                value={filterMonth}
-                                onChange={(e) => setFilterMonth(e.target.value)}
-                                style={{
-                                    width: '100%',
-                                    padding: '0.5rem',
-                                    border: '1px solid #d1d5db',
-                                    borderRadius: '0.375rem',
-                                    fontSize: '0.875rem'
-                                }}
-                            />
-                        </div>
-
-                        <button
-                            onClick={() => {
-                                setFilterType('ALL');
-                                setFilterMonth('');
-                            }}
-                            style={{
-                                padding: '0.5rem 1rem',
-                                backgroundColor: '#f3f4f6',
-                                color: '#374151',
-                                border: '1px solid #d1d5db',
-                                borderRadius: '0.375rem',
-                                cursor: 'pointer',
-                                fontSize: '0.875rem',
-                                fontWeight: '500',
-                                alignSelf: 'flex-end'
-                            }}
-                        >
-                            Clear Filters
-                        </button>
-
-                        <button
-                            onClick={() => {
-                                resetForm();
-                                setShowAddForm(true);
-                            }}
-                            style={{
-                                padding: '0.5rem 1rem',
-                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '0.375rem',
-                                cursor: 'pointer',
-                                fontSize: '0.875rem',
-                                fontWeight: '500',
-                                alignSelf: 'flex-end'
-                            }}
-                        >
-                            + Add Expenditure
-                        </button>
-                    </div>
-
-                    <div style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        padding: '0.75rem 1rem',
-                        backgroundColor: '#f9fafb',
-                        borderRadius: '0.375rem',
-                        border: '1px solid #e5e7eb'
-                    }}>
-                        <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>
-                            Showing {filteredExpenditures.length} of {expenditures.length} expenditures
-                        </span>
-                        <span style={{ fontSize: '0.875rem', fontWeight: '600', color: '#111827' }}>
-                            Total: ₹{totalAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-                        </span>
-                    </div>
-                </div>
-
                 {showAddForm && (
                     <div style={{ padding: '1.5rem', borderBottom: '1px solid #e5e7eb', backgroundColor: '#f9fafb' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
@@ -470,6 +367,117 @@ function ManageExpendituresModal({ onClose }) {
                         </form>
                     </div>
                 )}
+
+                {/* Expenditure List Section */}
+                <div style={{ borderBottom: '1px solid #e5e7eb', padding: '1rem 1.5rem', backgroundColor: '#ffffff' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                        <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#111827', margin: 0 }}>
+                            Expenditure List
+                        </h3>
+                        {!showAddForm && (
+                            <button
+                                onClick={() => {
+                                    resetForm();
+                                    setShowAddForm(true);
+                                }}
+                                style={{
+                                    padding: '0.5rem 1rem',
+                                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '0.375rem',
+                                    cursor: 'pointer',
+                                    fontSize: '0.875rem',
+                                    fontWeight: '500'
+                                }}
+                            >
+                                + Add Expenditure
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Filters */}
+                    <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                        <div style={{ flex: '1', minWidth: '200px' }}>
+                            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#374151', marginBottom: '0.25rem' }}>
+                                Filter by Type
+                            </label>
+                            <select
+                                value={filterType}
+                                onChange={(e) => setFilterType(e.target.value)}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.5rem',
+                                    border: '1px solid #d1d5db',
+                                    borderRadius: '0.375rem',
+                                    fontSize: '0.875rem'
+                                }}
+                            >
+                                <option value="ALL">All Types</option>
+                                <option value="SALARY">Salary</option>
+                                <option value="INFRASTRUCTURE">Infrastructure</option>
+                                <option value="UTILITIES">Utilities</option>
+                                <option value="SUPPLIES">Supplies</option>
+                                <option value="MAINTENANCE">Maintenance</option>
+                                <option value="MISC">Miscellaneous</option>
+                            </select>
+                        </div>
+
+                        <div style={{ flex: '1', minWidth: '200px' }}>
+                            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#374151', marginBottom: '0.25rem' }}>
+                                Filter by Month
+                            </label>
+                            <input
+                                type="month"
+                                value={filterMonth}
+                                onChange={(e) => setFilterMonth(e.target.value)}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.5rem',
+                                    border: '1px solid #d1d5db',
+                                    borderRadius: '0.375rem',
+                                    fontSize: '0.875rem'
+                                }}
+                            />
+                        </div>
+
+                        <button
+                            onClick={() => {
+                                setFilterType('ALL');
+                                setFilterMonth('');
+                            }}
+                            style={{
+                                padding: '0.5rem 1rem',
+                                backgroundColor: '#f3f4f6',
+                                color: '#374151',
+                                border: '1px solid #d1d5db',
+                                borderRadius: '0.375rem',
+                                cursor: 'pointer',
+                                fontSize: '0.875rem',
+                                fontWeight: '500'
+                            }}
+                        >
+                            Clear Filters
+                        </button>
+                    </div>
+
+                    {/* Summary */}
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        padding: '0.75rem 1rem',
+                        backgroundColor: '#f9fafb',
+                        borderRadius: '0.375rem',
+                        border: '1px solid #e5e7eb'
+                    }}>
+                        <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                            Showing {filteredExpenditures.length} of {expenditures.length} expenditures
+                        </span>
+                        <span style={{ fontSize: '0.875rem', fontWeight: '600', color: '#111827' }}>
+                            Total: ₹{totalAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                        </span>
+                    </div>
+                </div>
 
                 <div style={{ flex: 1, overflow: 'auto', padding: '1rem 1.5rem' }}>
                     {loading ? (
