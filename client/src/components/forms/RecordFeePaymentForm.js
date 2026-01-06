@@ -175,7 +175,7 @@ function RecordFeePaymentForm({ onClose, onSuccess, preselectedStudent = null })
                         </div>
                     </div>
 
-                    {formData.feeType === 'MONTHLY_FEE' && (
+                    {(formData.feeType === 'MONTHLY_FEE' || formData.feeType === 'TRANSPORT_FEE') && (
                         <div className="form-row">
                             <div className="form-group">
                                 <label>Month *</label>

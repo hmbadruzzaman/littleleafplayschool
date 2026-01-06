@@ -5,11 +5,11 @@ import AddStudentForm from '../components/forms/AddStudentForm';
 import AddTeacherForm from '../components/forms/AddTeacherForm';
 import AddExamForm from '../components/forms/AddExamForm';
 import RecordFeePaymentForm from '../components/forms/RecordFeePaymentForm';
-import AddExpenditureForm from '../components/forms/AddExpenditureForm';
 import StudentDetailsModal from '../components/modals/StudentDetailsModal';
 import ViewInquiriesModal from '../components/modals/ViewInquiriesModal';
 import ManageFeeStructureModal from '../components/modals/ManageFeeStructureModal';
 import ManageHolidaysModal from '../components/modals/ManageHolidaysModal';
+import ManageExpendituresModal from '../components/modals/ManageExpendituresModal';
 import './Dashboard.css';
 
 function AdminDashboard() {
@@ -25,7 +25,7 @@ function AdminDashboard() {
     const [showManageFeeStructure, setShowManageFeeStructure] = useState(false);
     const [showManageHolidays, setShowManageHolidays] = useState(false);
     const [showRecordPayment, setShowRecordPayment] = useState(false);
-    const [showAddExpenditure, setShowAddExpenditure] = useState(false);
+    const [showManageExpenditures, setShowManageExpenditures] = useState(false);
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [timePeriod, setTimePeriod] = useState('current-year');
     const [studentSearchTerm, setStudentSearchTerm] = useState('');
@@ -274,7 +274,7 @@ function AdminDashboard() {
                                 <button className="action-btn" onClick={() => setShowManageHolidays(true)}>Manage Holidays</button>
                                 <button className="action-btn" onClick={() => setShowManageFeeStructure(true)}>Manage Fee Structure</button>
                                 <button className="action-btn" onClick={() => setShowRecordPayment(true)}>Record Fee Payment</button>
-                                <button className="action-btn" onClick={() => setShowAddExpenditure(true)}>Add Expenditure</button>
+                                <button className="action-btn" onClick={() => setShowManageExpenditures(true)}>Manage Expenditures</button>
                                 <button className="action-btn" onClick={() => setActiveTab('reports')}>View Reports</button>
                             </div>
                         </div>
@@ -499,10 +499,9 @@ function AdminDashboard() {
                     onSuccess={fetchData}
                 />
             )}
-            {showAddExpenditure && (
-                <AddExpenditureForm
-                    onClose={() => setShowAddExpenditure(false)}
-                    onSuccess={fetchData}
+            {showManageExpenditures && (
+                <ManageExpendituresModal
+                    onClose={() => setShowManageExpenditures(false)}
                 />
             )}
             {selectedStudent && (

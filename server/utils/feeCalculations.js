@@ -70,9 +70,27 @@ async function calculatePendingFeesForStudent(student) {
         } else if (structure.frequency === 'MONTHLY') {
             let startMonth;
 
+            // Debug logging for monthly fees
+            console.log(`\nProcessing monthly fee: ${structure.feeType}`);
+
+            // Show all fee records for this fee type
+            const allFeesOfType = studentFees.filter(f => f.feeType === structure.feeType);
+            if (allFeesOfType.length > 0) {
+                console.log(`  Found ${allFeesOfType.length} fee record(s) of type ${structure.feeType}:`);
+                allFeesOfType.forEach((fee, idx) => {
+                    console.log(`    Record ${idx + 1}: month="${fee.month}", academicYear="${fee.academicYear}", status="${fee.paymentStatus}", amount=${fee.amount}`);
+                });
+            } else {
+                console.log(`  No fee records found for ${structure.feeType}`);
+            }
+
             // Special handling for TRANSPORT_FEE
             if (structure.feeType === 'TRANSPORT_FEE') {
+                console.log('  Transport enabled:', student.transportEnabled);
+                console.log('  Transport start month:', student.transportStartMonth);
+
                 if (!student.transportEnabled) {
+                    console.log('  Skipping - transport not enabled');
                     continue;
                 }
 
@@ -90,6 +108,9 @@ async function calculatePendingFeesForStudent(student) {
             let monthPending = 0;
             const months = [];
 
+            console.log(`  Start month: ${startMonth.toLocaleDateString()}`);
+            console.log(`  Current month: ${currentMonth.toLocaleDateString()}`);
+
             // Loop through each month
             for (let d = new Date(startMonth); d <= currentMonth; d.setMonth(d.getMonth() + 1)) {
                 const monthName = d.toLocaleString('default', { month: 'long' });
@@ -101,8 +122,19 @@ async function calculatePendingFeesForStudent(student) {
                     f.academicYear && f.academicYear.includes(year.toString())
                 );
 
+                // Debug logging
+                if (structure.feeType === 'TRANSPORT_FEE' && monthPayments.length > 0) {
+                    console.log(`Transport Fee - ${monthName} ${year}:`);
+                    console.log('  Month payments:', JSON.stringify(monthPayments, null, 2));
+                }
+
                 // Check if there's any payment with PAID status for this month
                 const hasPaidStatus = monthPayments.some(f => f.paymentStatus === 'PAID');
+
+                // Debug logging
+                if (structure.feeType === 'TRANSPORT_FEE' && monthPayments.length > 0) {
+                    console.log('  Has PAID status:', hasPaidStatus);
+                }
 
                 // If any payment has PAID status, consider this month as fully paid (pending = 0)
                 let monthlyPending = 0;
@@ -121,6 +153,11 @@ async function calculatePendingFeesForStudent(student) {
                     } else {
                         monthlyPending = amountDue - pendingThisMonth;
                     }
+                }
+
+                // Debug logging
+                if (structure.feeType === 'TRANSPORT_FEE' && monthPayments.length > 0) {
+                    console.log('  Monthly pending:', monthlyPending);
                 }
 
                 if (monthlyPending > 0) {

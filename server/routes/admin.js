@@ -40,6 +40,8 @@ router.put('/holidays/:holidayId', adminController.updateHoliday);
 // Expenditure management
 router.post('/expenditures', adminController.createExpenditure);
 router.get('/expenditures', adminController.getAllExpenditures);
+router.put('/expenditures/:expenditureId', adminController.updateExpenditure);
+router.delete('/expenditures/:expenditureId', adminController.deleteExpenditure);
 
 // Reports
 router.get('/reports/earnings', adminController.getEarningsReport);

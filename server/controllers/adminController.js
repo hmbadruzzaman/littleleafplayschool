@@ -699,6 +699,39 @@ exports.getExpenditureReport = async (req, res) => {
     }
 };
 
+exports.updateExpenditure = async (req, res) => {
+    try {
+        const { expenditureId } = req.params;
+        const { expenseType, amount, date, comment } = req.body;
+
+        const updates = {};
+        if (expenseType) updates.expenseType = expenseType;
+        if (amount) updates.amount = parseFloat(amount);
+        if (date) updates.date = date;
+        if (comment !== undefined) updates.comment = comment;
+
+        const expenditure = await ExpenditureModel.update(expenditureId, updates);
+
+        res.status(200).json(successResponse(expenditure, 'Expenditure updated successfully'));
+    } catch (error) {
+        console.error('Update expenditure error:', error);
+        res.status(500).json(errorResponse('Failed to update expenditure', error));
+    }
+};
+
+exports.deleteExpenditure = async (req, res) => {
+    try {
+        const { expenditureId } = req.params;
+
+        await ExpenditureModel.delete(expenditureId);
+
+        res.status(200).json(successResponse({ expenditureId }, 'Expenditure deleted successfully'));
+    } catch (error) {
+        console.error('Delete expenditure error:', error);
+        res.status(500).json(errorResponse('Failed to delete expenditure', error));
+    }
+};
+
 // Get all inquiries
 exports.getAllInquiries = async (req, res) => {
     try {
