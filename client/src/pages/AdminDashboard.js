@@ -33,12 +33,103 @@ function AdminDashboard() {
     const [showInquiries, setShowInquiries] = useState(false);
     const [showAddInquiry, setShowAddInquiry] = useState(false);
     const [pendingInquiriesCount, setPendingInquiriesCount] = useState(0);
+    const [reportStartDate, setReportStartDate] = useState(
+        new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0]
+    );
+    const [reportEndDate, setReportEndDate] = useState(
+        new Date().toISOString().split('T')[0]
+    );
+    const [reportLoading, setReportLoading] = useState(false);
     const [studentSortField, setStudentSortField] = useState('rollNumber');
     const [studentSortDirection, setStudentSortDirection] = useState('asc');
 
     useEffect(() => {
         fetchData();
     }, [timePeriod]);
+
+    const fetchEarningsReport = async (startDate, endDate) => {
+        try {
+            setReportLoading(true);
+            const token = localStorage.getItem('token');
+            const API_URL = window.location.hostname === 'localhost'
+                ? 'http://localhost:5001/api'
+                : 'https://welittleleaf.com/api';
+
+            // Fetch both earnings and expenditure reports
+            const [earningsResponse, expenditureResponse] = await Promise.all([
+                fetch(
+                    `${API_URL}/admin/reports/earnings?startDate=${startDate}&endDate=${endDate}`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    }
+                ),
+                fetch(
+                    `${API_URL}/admin/reports/expenditure?startDate=${startDate}&endDate=${endDate}`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    }
+                )
+            ]);
+
+            const earningsData = await earningsResponse.json();
+            const expenditureData = await expenditureResponse.json();
+
+            if (earningsData.success) {
+                setReports(prev => ({
+                    ...prev,
+                    earnings: earningsData.data,
+                    expenditure: expenditureData.success ? expenditureData.data : prev?.expenditure
+                }));
+            }
+        } catch (error) {
+            console.error('Error fetching reports:', error);
+        } finally {
+            setReportLoading(false);
+        }
+    };
+
+    const setQuickDateRange = (range) => {
+        const today = new Date();
+        let start, end;
+
+        switch(range) {
+            case 'today':
+                start = end = today.toISOString().split('T')[0];
+                break;
+            case 'this-week':
+                const weekStart = new Date(today);
+                weekStart.setDate(today.getDate() - today.getDay());
+                start = weekStart.toISOString().split('T')[0];
+                end = today.toISOString().split('T')[0];
+                break;
+            case 'this-month':
+                start = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+                end = today.toISOString().split('T')[0];
+                break;
+            case 'last-month':
+                start = new Date(today.getFullYear(), today.getMonth() - 1, 1).toISOString().split('T')[0];
+                end = new Date(today.getFullYear(), today.getMonth(), 0).toISOString().split('T')[0];
+                break;
+            case 'this-year':
+                start = new Date(today.getFullYear(), 0, 1).toISOString().split('T')[0];
+                end = today.toISOString().split('T')[0];
+                break;
+            case 'last-year':
+                start = new Date(today.getFullYear() - 1, 0, 1).toISOString().split('T')[0];
+                end = new Date(today.getFullYear() - 1, 11, 31).toISOString().split('T')[0];
+                break;
+            default:
+                return;
+        }
+
+        setReportStartDate(start);
+        setReportEndDate(end);
+        fetchEarningsReport(start, end);
+    };
 
     const getDateRange = () => {
         const today = new Date();
@@ -408,36 +499,370 @@ function AdminDashboard() {
                 {activeTab === 'reports' && (
                     <>
                         <div className="card">
-                            <h2>Earnings Report</h2>
-                            <div className="report-grid">
-                                <div className="report-item">
-                                    <strong>Total Earnings:</strong>
-                                    <span>₹{reports?.earnings?.totalEarnings || 0}</span>
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <h2 style={{ margin: '0 0 1rem 0' }}>Financial Reports</h2>
+
+                                {/* Quick Presets */}
+                                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+                                    <button
+                                        onClick={() => setQuickDateRange('today')}
+                                        className="btn btn-secondary"
+                                        style={{ fontSize: '0.75rem', padding: '0.375rem 0.75rem' }}
+                                    >
+                                        Today
+                                    </button>
+                                    <button
+                                        onClick={() => setQuickDateRange('this-week')}
+                                        className="btn btn-secondary"
+                                        style={{ fontSize: '0.75rem', padding: '0.375rem 0.75rem' }}
+                                    >
+                                        This Week
+                                    </button>
+                                    <button
+                                        onClick={() => setQuickDateRange('this-month')}
+                                        className="btn btn-secondary"
+                                        style={{ fontSize: '0.75rem', padding: '0.375rem 0.75rem' }}
+                                    >
+                                        This Month
+                                    </button>
+                                    <button
+                                        onClick={() => setQuickDateRange('last-month')}
+                                        className="btn btn-secondary"
+                                        style={{ fontSize: '0.75rem', padding: '0.375rem 0.75rem' }}
+                                    >
+                                        Last Month
+                                    </button>
+                                    <button
+                                        onClick={() => setQuickDateRange('this-year')}
+                                        className="btn btn-secondary"
+                                        style={{ fontSize: '0.75rem', padding: '0.375rem 0.75rem' }}
+                                    >
+                                        This Year
+                                    </button>
+                                    <button
+                                        onClick={() => setQuickDateRange('last-year')}
+                                        className="btn btn-secondary"
+                                        style={{ fontSize: '0.75rem', padding: '0.375rem 0.75rem' }}
+                                    >
+                                        Last Year
+                                    </button>
                                 </div>
-                                <div className="report-item">
-                                    <strong>Admission Fees:</strong>
-                                    <span>₹{reports?.earnings?.admissionFees || 0}</span>
+
+                                {/* Custom Date Range */}
+                                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                                    <div>
+                                        <label style={{ fontSize: '0.875rem', fontWeight: '500', color: '#374151', marginRight: '0.5rem' }}>
+                                            From:
+                                        </label>
+                                        <input
+                                            type="date"
+                                            value={reportStartDate}
+                                            onChange={(e) => setReportStartDate(e.target.value)}
+                                            style={{
+                                                padding: '0.5rem',
+                                                border: '1px solid #d1d5db',
+                                                borderRadius: '0.375rem',
+                                                fontSize: '0.875rem'
+                                            }}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={{ fontSize: '0.875rem', fontWeight: '500', color: '#374151', marginRight: '0.5rem' }}>
+                                            To:
+                                        </label>
+                                        <input
+                                            type="date"
+                                            value={reportEndDate}
+                                            onChange={(e) => setReportEndDate(e.target.value)}
+                                            style={{
+                                                padding: '0.5rem',
+                                                border: '1px solid #d1d5db',
+                                                borderRadius: '0.375rem',
+                                                fontSize: '0.875rem'
+                                            }}
+                                        />
+                                    </div>
+                                    <button
+                                        onClick={() => fetchEarningsReport(reportStartDate, reportEndDate)}
+                                        disabled={reportLoading}
+                                        className="btn btn-primary"
+                                        style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}
+                                    >
+                                        {reportLoading ? 'Loading...' : 'Apply Filter'}
+                                    </button>
                                 </div>
-                                <div className="report-item">
-                                    <strong>Monthly Fees:</strong>
-                                    <span>₹{reports?.earnings?.monthlyFees || 0}</span>
+                            </div>
+
+                            {/* Earnings vs Expenditure Summary */}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+                                <div style={{
+                                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                    color: 'white',
+                                    padding: '1.5rem',
+                                    borderRadius: '0.5rem',
+                                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                                }}>
+                                    <div style={{ fontSize: '0.875rem', fontWeight: '500', opacity: 0.9, marginBottom: '0.5rem' }}>
+                                        Total Earnings
+                                    </div>
+                                    <div style={{ fontSize: '2rem', fontWeight: '700' }}>
+                                        ₹{(reports?.earnings?.totalEarnings || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                                    </div>
+                                    <div style={{ fontSize: '0.75rem', opacity: 0.9, marginTop: '0.5rem' }}>
+                                        {reports?.earnings?.transactionCount || 0} transactions
+                                    </div>
                                 </div>
-                                <div className="report-item">
-                                    <strong>Misc Fees:</strong>
-                                    <span>₹{reports?.earnings?.miscFees || 0}</span>
+
+                                <div style={{
+                                    background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                                    color: 'white',
+                                    padding: '1.5rem',
+                                    borderRadius: '0.5rem',
+                                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                                }}>
+                                    <div style={{ fontSize: '0.875rem', fontWeight: '500', opacity: 0.9, marginBottom: '0.5rem' }}>
+                                        Total Expenditure
+                                    </div>
+                                    <div style={{ fontSize: '2rem', fontWeight: '700' }}>
+                                        ₹{(reports?.expenditure?.totalExpenditure || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                                    </div>
+                                    <div style={{ fontSize: '0.75rem', opacity: 0.9, marginTop: '0.5rem' }}>
+                                        {reports?.expenditure?.transactionCount || 0} transactions
+                                    </div>
+                                </div>
+
+                                <div style={{
+                                    background: (reports?.earnings?.totalEarnings || 0) - (reports?.expenditure?.totalExpenditure || 0) >= 0
+                                        ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)'
+                                        : 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                                    color: 'white',
+                                    padding: '1.5rem',
+                                    borderRadius: '0.5rem',
+                                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                                }}>
+                                    <div style={{ fontSize: '0.875rem', fontWeight: '500', opacity: 0.9, marginBottom: '0.5rem' }}>
+                                        {(reports?.earnings?.totalEarnings || 0) - (reports?.expenditure?.totalExpenditure || 0) >= 0 ? 'Net Profit' : 'Net Loss'}
+                                    </div>
+                                    <div style={{ fontSize: '2rem', fontWeight: '700' }}>
+                                        ₹{Math.abs((reports?.earnings?.totalEarnings || 0) - (reports?.expenditure?.totalExpenditure || 0)).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                                    </div>
+                                    <div style={{ fontSize: '0.75rem', opacity: 0.9, marginTop: '0.5rem' }}>
+                                        {((((reports?.earnings?.totalEarnings || 0) - (reports?.expenditure?.totalExpenditure || 0)) / (reports?.earnings?.totalEarnings || 1)) * 100).toFixed(1)}% margin
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Earnings Breakdown */}
+                            <h3 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '1rem', color: '#111827' }}>
+                                Earnings by Fee Type
+                            </h3>
+                            <div className="report-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+                                <div style={{
+                                    padding: '1rem',
+                                    backgroundColor: '#fef3c7',
+                                    borderRadius: '0.5rem',
+                                    border: '1px solid #fde68a'
+                                }}>
+                                    <div style={{ fontSize: '0.875rem', fontWeight: '500', color: '#92400e', marginBottom: '0.5rem' }}>
+                                        Admission Fees
+                                    </div>
+                                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#78350f' }}>
+                                        ₹{(reports?.earnings?.admissionFees || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                                    </div>
+                                </div>
+
+                                <div style={{
+                                    padding: '1rem',
+                                    backgroundColor: '#dbeafe',
+                                    borderRadius: '0.5rem',
+                                    border: '1px solid #bfdbfe'
+                                }}>
+                                    <div style={{ fontSize: '0.875rem', fontWeight: '500', color: '#1e40af', marginBottom: '0.5rem' }}>
+                                        Monthly Fees
+                                    </div>
+                                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e3a8a' }}>
+                                        ₹{(reports?.earnings?.monthlyFees || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                                    </div>
+                                </div>
+
+                                <div style={{
+                                    padding: '1rem',
+                                    backgroundColor: '#e0e7ff',
+                                    borderRadius: '0.5rem',
+                                    border: '1px solid #c7d2fe'
+                                }}>
+                                    <div style={{ fontSize: '0.875rem', fontWeight: '500', color: '#4338ca', marginBottom: '0.5rem' }}>
+                                        Transport Fees
+                                    </div>
+                                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#3730a3' }}>
+                                        ₹{(reports?.earnings?.transportFees || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                                    </div>
+                                </div>
+
+                                <div style={{
+                                    padding: '1rem',
+                                    backgroundColor: '#fce7f3',
+                                    borderRadius: '0.5rem',
+                                    border: '1px solid #fbcfe8'
+                                }}>
+                                    <div style={{ fontSize: '0.875rem', fontWeight: '500', color: '#9f1239', marginBottom: '0.5rem' }}>
+                                        Annual Fees
+                                    </div>
+                                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#881337' }}>
+                                        ₹{(reports?.earnings?.annualFees || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                                    </div>
+                                </div>
+
+                                <div style={{
+                                    padding: '1rem',
+                                    backgroundColor: '#dcfce7',
+                                    borderRadius: '0.5rem',
+                                    border: '1px solid #bbf7d0'
+                                }}>
+                                    <div style={{ fontSize: '0.875rem', fontWeight: '500', color: '#166534', marginBottom: '0.5rem' }}>
+                                        Exam Fees
+                                    </div>
+                                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#14532d' }}>
+                                        ₹{(reports?.earnings?.examFees || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                                    </div>
+                                </div>
+
+                                <div style={{
+                                    padding: '1rem',
+                                    backgroundColor: '#f3f4f6',
+                                    borderRadius: '0.5rem',
+                                    border: '1px solid #e5e7eb'
+                                }}>
+                                    <div style={{ fontSize: '0.875rem', fontWeight: '500', color: '#374151', marginBottom: '0.5rem' }}>
+                                        Miscellaneous
+                                    </div>
+                                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1f2937' }}>
+                                        ₹{(reports?.earnings?.miscFees || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Expenditure Breakdown */}
+                            <h3 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '1rem', marginTop: '2rem', color: '#111827' }}>
+                                Expenditure by Type
+                            </h3>
+                            <div className="report-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+                                <div style={{
+                                    padding: '1rem',
+                                    backgroundColor: '#fef3c7',
+                                    borderRadius: '0.5rem',
+                                    border: '1px solid #fde68a'
+                                }}>
+                                    <div style={{ fontSize: '0.875rem', fontWeight: '500', color: '#92400e', marginBottom: '0.5rem' }}>
+                                        Salary Expenses
+                                    </div>
+                                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#78350f' }}>
+                                        ₹{(reports?.expenditure?.salaryExpenses || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                                    </div>
+                                </div>
+
+                                <div style={{
+                                    padding: '1rem',
+                                    backgroundColor: '#dbeafe',
+                                    borderRadius: '0.5rem',
+                                    border: '1px solid #bfdbfe'
+                                }}>
+                                    <div style={{ fontSize: '0.875rem', fontWeight: '500', color: '#1e40af', marginBottom: '0.5rem' }}>
+                                        Infrastructure Expenses
+                                    </div>
+                                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e3a8a' }}>
+                                        ₹{(reports?.expenditure?.infrastructureExpenses || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                                    </div>
+                                </div>
+
+                                <div style={{
+                                    padding: '1rem',
+                                    backgroundColor: '#e0e7ff',
+                                    borderRadius: '0.5rem',
+                                    border: '1px solid #c7d2fe'
+                                }}>
+                                    <div style={{ fontSize: '0.875rem', fontWeight: '500', color: '#4338ca', marginBottom: '0.5rem' }}>
+                                        Utilities Expenses
+                                    </div>
+                                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#3730a3' }}>
+                                        ₹{(reports?.expenditure?.utilitiesExpenses || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                                    </div>
+                                </div>
+
+                                <div style={{
+                                    padding: '1rem',
+                                    backgroundColor: '#fce7f3',
+                                    borderRadius: '0.5rem',
+                                    border: '1px solid #fbcfe8'
+                                }}>
+                                    <div style={{ fontSize: '0.875rem', fontWeight: '500', color: '#9f1239', marginBottom: '0.5rem' }}>
+                                        Supplies Expenses
+                                    </div>
+                                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#881337' }}>
+                                        ₹{(reports?.expenditure?.suppliesExpenses || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                                    </div>
+                                </div>
+
+                                <div style={{
+                                    padding: '1rem',
+                                    backgroundColor: '#dcfce7',
+                                    borderRadius: '0.5rem',
+                                    border: '1px solid #bbf7d0'
+                                }}>
+                                    <div style={{ fontSize: '0.875rem', fontWeight: '500', color: '#166534', marginBottom: '0.5rem' }}>
+                                        Maintenance Expenses
+                                    </div>
+                                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#14532d' }}>
+                                        ₹{(reports?.expenditure?.maintenanceExpenses || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                                    </div>
+                                </div>
+
+                                <div style={{
+                                    padding: '1rem',
+                                    backgroundColor: '#f3f4f6',
+                                    borderRadius: '0.5rem',
+                                    border: '1px solid #e5e7eb'
+                                }}>
+                                    <div style={{ fontSize: '0.875rem', fontWeight: '500', color: '#374151', marginBottom: '0.5rem' }}>
+                                        Miscellaneous
+                                    </div>
+                                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1f2937' }}>
+                                        ₹{(reports?.expenditure?.miscExpenses || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         <div className="card">
-                            <h2>Student Distribution</h2>
-                            <div className="report-grid">
-                                {Object.entries(reports?.students?.byClass || {}).map(([className, count]) => (
-                                    <div key={className} className="report-item">
-                                        <strong>{className}:</strong>
-                                        <span>{count} students</span>
-                                    </div>
-                                ))}
+                            <h2>Student Distribution by Class</h2>
+                            <div className="report-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                                {Object.entries(reports?.students?.byClass || {}).map(([className, count], index) => {
+                                    const colors = [
+                                        { bg: '#fef3c7', border: '#fde68a', textLight: '#92400e', textDark: '#78350f' },
+                                        { bg: '#dbeafe', border: '#bfdbfe', textLight: '#1e40af', textDark: '#1e3a8a' },
+                                        { bg: '#e0e7ff', border: '#c7d2fe', textLight: '#4338ca', textDark: '#3730a3' },
+                                        { bg: '#fce7f3', border: '#fbcfe8', textLight: '#9f1239', textDark: '#881337' },
+                                        { bg: '#dcfce7', border: '#bbf7d0', textLight: '#166534', textDark: '#14532d' },
+                                        { bg: '#f3f4f6', border: '#e5e7eb', textLight: '#374151', textDark: '#1f2937' }
+                                    ];
+                                    const color = colors[index % colors.length];
+
+                                    return (
+                                        <div key={className} style={{
+                                            padding: '1rem',
+                                            backgroundColor: color.bg,
+                                            borderRadius: '0.5rem',
+                                            border: `1px solid ${color.border}`
+                                        }}>
+                                            <div style={{ fontSize: '0.875rem', fontWeight: '500', color: color.textLight, marginBottom: '0.5rem' }}>
+                                                {className}
+                                            </div>
+                                            <div style={{ fontSize: '1.5rem', fontWeight: '700', color: color.textDark }}>
+                                                {count} {count === 1 ? 'Student' : 'Students'}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     </>

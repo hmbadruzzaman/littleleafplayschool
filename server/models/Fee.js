@@ -145,20 +145,51 @@ class FeeModel {
             totalEarnings: 0,
             admissionFees: 0,
             monthlyFees: 0,
+            transportFees: 0,
+            annualFees: 0,
+            examFees: 0,
             miscFees: 0,
             transactionCount: result.Items.length,
+            byMonth: {},
+            byFeeType: {},
             fees: result.Items
         };
 
         result.Items.forEach(fee => {
             const amount = parseFloat(fee.amount) || 0;
             report.totalEarnings += amount;
-            if (fee.feeType === 'ADMISSION') {
-                report.admissionFees += amount;
-            } else if (fee.feeType === 'MONTHLY_TUITION') {
-                report.monthlyFees += amount;
-            } else if (fee.feeType === 'MISC') {
-                report.miscFees += amount;
+
+            // By fee type
+            switch(fee.feeType) {
+                case 'ADMISSION_FEE':
+                    report.admissionFees += amount;
+                    break;
+                case 'MONTHLY_FEE':
+                    report.monthlyFees += amount;
+                    break;
+                case 'TRANSPORT_FEE':
+                    report.transportFees += amount;
+                    break;
+                case 'ANNUAL_FEE':
+                    report.annualFees += amount;
+                    break;
+                case 'EXAM_FEE':
+                    report.examFees += amount;
+                    break;
+                case 'MISC':
+                    report.miscFees += amount;
+                    break;
+                default:
+                    report.miscFees += amount;
+            }
+
+            // Count by fee type
+            report.byFeeType[fee.feeType] = (report.byFeeType[fee.feeType] || 0) + 1;
+
+            // By month (for chart data)
+            if (fee.paymentDate) {
+                const monthKey = fee.paymentDate.substring(0, 7); // YYYY-MM
+                report.byMonth[monthKey] = (report.byMonth[monthKey] || 0) + amount;
             }
         });
 
