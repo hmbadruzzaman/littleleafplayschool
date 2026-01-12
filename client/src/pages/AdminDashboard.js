@@ -42,6 +42,8 @@ function AdminDashboard() {
     const [reportLoading, setReportLoading] = useState(false);
     const [studentSortField, setStudentSortField] = useState('rollNumber');
     const [studentSortDirection, setStudentSortDirection] = useState('asc');
+    const [pendingFeesData, setPendingFeesData] = useState(null);
+    const [showPendingDetails, setShowPendingDetails] = useState(false);
 
     useEffect(() => {
         fetchData();
@@ -55,8 +57,8 @@ function AdminDashboard() {
                 ? 'http://localhost:5001/api'
                 : 'https://welittleleaf.com/api';
 
-            // Fetch both earnings and expenditure reports
-            const [earningsResponse, expenditureResponse] = await Promise.all([
+            // Fetch earnings, expenditure, and pending fees reports
+            const [earningsResponse, expenditureResponse, pendingFeesResponse] = await Promise.all([
                 fetch(
                     `${API_URL}/admin/reports/earnings?startDate=${startDate}&endDate=${endDate}`,
                     {
@@ -72,11 +74,20 @@ function AdminDashboard() {
                             'Authorization': `Bearer ${token}`
                         }
                     }
+                ),
+                fetch(
+                    `${API_URL}/admin/reports/pending-fees`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    }
                 )
             ]);
 
             const earningsData = await earningsResponse.json();
             const expenditureData = await expenditureResponse.json();
+            const pendingFeesDataResult = await pendingFeesResponse.json();
 
             if (earningsData.success) {
                 setReports(prev => ({
@@ -84,6 +95,10 @@ function AdminDashboard() {
                     earnings: earningsData.data,
                     expenditure: expenditureData.success ? expenditureData.data : prev?.expenditure
                 }));
+            }
+
+            if (pendingFeesDataResult.success) {
+                setPendingFeesData(pendingFeesDataResult.data);
             }
         } catch (error) {
             console.error('Error fetching reports:', error);
@@ -170,7 +185,7 @@ function AdminDashboard() {
                 ? 'http://localhost:5001/api'
                 : 'https://welittleleaf.com/api';
 
-            const [studentsRes, teachersRes, studentReportRes, earningsRes, expenditureRes, inquiriesRes] = await Promise.all([
+            const [studentsRes, teachersRes, studentReportRes, earningsRes, expenditureRes, inquiriesRes, pendingFeesRes] = await Promise.all([
                 adminAPI.getAllStudents(),
                 adminAPI.getAllTeachers(),
                 adminAPI.getStudentCountReport(),
@@ -180,7 +195,12 @@ function AdminDashboard() {
                         'Authorization': `Bearer ${localStorage.getItem('token')}`
                     }
                 }).then(res => res.json()),
-                adminAPI.getAllInquiries()
+                adminAPI.getAllInquiries(),
+                fetch(`${API_URL}/admin/reports/pending-fees`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                }).then(res => res.json())
             ]);
 
             setStudents(studentsRes.data.data);
@@ -190,6 +210,11 @@ function AdminDashboard() {
                 earnings: earningsRes.data.data,
                 expenditure: expenditureRes.data
             });
+
+            // Set pending fees data
+            if (pendingFeesRes.success) {
+                setPendingFeesData(pendingFeesRes.data);
+            }
 
             // Count pending inquiries (NEW + IN_PROGRESS)
             const pendingCount = (inquiriesRes.data.data || []).filter(inq => inq.status === 'NEW' || inq.status === 'IN_PROGRESS').length;
@@ -651,6 +676,89 @@ function AdminDashboard() {
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Total Pending Fees */}
+                            {pendingFeesData && (
+                                <div style={{ marginTop: '1.5rem', marginBottom: '1.5rem' }}>
+                                    <div
+                                        onClick={() => setShowPendingDetails(!showPendingDetails)}
+                                        style={{
+                                            background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                                            color: 'white',
+                                            padding: '1.5rem',
+                                            borderRadius: '0.5rem',
+                                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                                            cursor: 'pointer',
+                                            transition: 'transform 0.2s',
+                                            ':hover': {
+                                                transform: 'translateY(-2px)'
+                                            }
+                                        }}
+                                    >
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <div>
+                                                <div style={{ fontSize: '0.875rem', fontWeight: '500', opacity: 0.9, marginBottom: '0.5rem' }}>
+                                                    Total Pending Fees
+                                                </div>
+                                                <div style={{ fontSize: '2rem', fontWeight: '700' }}>
+                                                    ₹{(pendingFeesData.totalPending || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                                                </div>
+                                                <div style={{ fontSize: '0.75rem', opacity: 0.9, marginTop: '0.5rem' }}>
+                                                    {pendingFeesData.studentCount || 0} students with pending fees
+                                                </div>
+                                            </div>
+                                            <div style={{ fontSize: '1.5rem', fontWeight: '700' }}>
+                                                {showPendingDetails ? '▼' : '▶'}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Expandable Student Details */}
+                                    {showPendingDetails && pendingFeesData.students && pendingFeesData.students.length > 0 && (
+                                        <div style={{ marginTop: '1rem', backgroundColor: '#fff7ed', borderRadius: '0.5rem', border: '1px solid #fed7aa', overflow: 'hidden' }}>
+                                            <div style={{ padding: '1rem', borderBottom: '1px solid #fed7aa', backgroundColor: '#ffedd5' }}>
+                                                <div style={{ display: 'grid', gridTemplateColumns: '2fr 2fr 1fr 1.5fr 1fr', gap: '1rem', fontWeight: '600', fontSize: '0.875rem', color: '#9a3412' }}>
+                                                    <div>Student Name</div>
+                                                    <div>Parent Name</div>
+                                                    <div>Class</div>
+                                                    <div>Phone</div>
+                                                    <div style={{ textAlign: 'right' }}>Pending Amount</div>
+                                                </div>
+                                            </div>
+                                            <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                                                {pendingFeesData.students.map((student, index) => (
+                                                    <div
+                                                        key={student.studentId}
+                                                        style={{
+                                                            padding: '1rem',
+                                                            borderBottom: index < pendingFeesData.students.length - 1 ? '1px solid #fed7aa' : 'none',
+                                                            backgroundColor: index % 2 === 0 ? '#ffffff' : '#fffbeb'
+                                                        }}
+                                                    >
+                                                        <div style={{ display: 'grid', gridTemplateColumns: '2fr 2fr 1fr 1.5fr 1fr', gap: '1rem', fontSize: '0.875rem', color: '#78350f', alignItems: 'center' }}>
+                                                            <div style={{ fontWeight: '500' }}>{student.studentName}</div>
+                                                            <div>{student.parentName}</div>
+                                                            <div>{student.class}</div>
+                                                            <div>
+                                                                <a
+                                                                    href={`tel:${student.phone}`}
+                                                                    style={{ color: '#ea580c', textDecoration: 'none', fontWeight: '500' }}
+                                                                    onClick={(e) => e.stopPropagation()}
+                                                                >
+                                                                    {student.phone}
+                                                                </a>
+                                                            </div>
+                                                            <div style={{ textAlign: 'right', fontWeight: '700', color: '#c2410c' }}>
+                                                                ₹{student.totalPending.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
                             {/* Earnings Breakdown */}
                             <h3 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '1rem', color: '#111827' }}>

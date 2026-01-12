@@ -47,6 +47,7 @@ router.delete('/expenditures/:expenditureId', adminController.deleteExpenditure)
 router.get('/reports/earnings', adminController.getEarningsReport);
 router.get('/reports/expenditure', adminController.getExpenditureReport);
 router.get('/reports/students', adminController.getStudentCountReport);
+router.get('/reports/pending-fees', adminController.getTotalPendingFees);
 
 // School info
 router.get('/school-info', adminController.getSchoolInfo);

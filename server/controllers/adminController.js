@@ -732,6 +732,47 @@ exports.deleteExpenditure = async (req, res) => {
     }
 };
 
+// Get total pending fees across all students
+exports.getTotalPendingFees = async (req, res) => {
+    try {
+        const students = await StudentModel.getAll();
+        const activeStudents = students.filter(s => s.status === 'ACTIVE');
+
+        let totalPending = 0;
+        const studentsWithPending = [];
+
+        for (const student of activeStudents) {
+            const pendingResult = await calculatePendingFeesForStudent(student);
+
+            if (pendingResult.totalPending > 0) {
+                studentsWithPending.push({
+                    studentId: student.studentId,
+                    studentName: student.fullName,
+                    rollNumber: student.rollNumber,
+                    class: student.class,
+                    parentName: student.parentName,
+                    phone: student.parentPhone,
+                    totalPending: pendingResult.totalPending,
+                    pendingBreakdown: pendingResult.breakdown
+                });
+                totalPending += pendingResult.totalPending;
+            }
+        }
+
+        // Sort by pending amount (highest first)
+        studentsWithPending.sort((a, b) => b.totalPending - a.totalPending);
+
+        res.status(200).json(successResponse({
+            totalPending,
+            studentCount: studentsWithPending.length,
+            students: studentsWithPending
+        }, 'Total pending fees calculated successfully'));
+    } catch (error) {
+        console.error('Get total pending fees error:', error);
+        res.status(500).json(errorResponse('Failed to calculate total pending fees', error));
+    }
+};
+
 // Get all inquiries
 exports.getAllInquiries = async (req, res) => {
     try {
