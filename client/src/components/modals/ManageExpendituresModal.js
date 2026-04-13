@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './Modals.css';
 
-function ManageExpendituresModal({ onClose }) {
+function ManageExpendituresModal({ onClose, inline = false }) {
     const [expenditures, setExpenditures] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -162,6 +162,8 @@ function ManageExpendituresModal({ onClose }) {
             'UTILITIES': 'Utilities',
             'SUPPLIES': 'Supplies',
             'MAINTENANCE': 'Maintenance',
+            'CAB_DRIVER_SALARY': "Cab Driver's Salary",
+            'PETROL': 'Petrol',
             'MISC': 'Miscellaneous'
         };
         return labels[type] || type;
@@ -174,6 +176,8 @@ function ManageExpendituresModal({ onClose }) {
             'UTILITIES': '#f59e0b',
             'SUPPLIES': '#8b5cf6',
             'MAINTENANCE': '#ef4444',
+            'CAB_DRIVER_SALARY': '#06b6d4',
+            'PETROL': '#d97706',
             'MISC': '#6b7280'
         };
         return colors[type] || '#6b7280';
@@ -215,17 +219,19 @@ function ManageExpendituresModal({ onClose }) {
         sum + parseFloat(exp.amount || 0), 0
     );
 
-    return (
-        <div className="modal-overlay" onClick={onClose}>
-            <div
-                className="modal-content"
-                onClick={(e) => e.stopPropagation()}
-                style={{ maxWidth: '1000px', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
-            >
+    const body = (
+        <div
+            className={inline ? '' : 'modal-content'}
+            onClick={(e) => e.stopPropagation()}
+            style={inline ? {} : { maxWidth: '1000px', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
+        >
+            {!inline && (
                 <div className="modal-header">
                     <h2>Manage Expenditures</h2>
                     <button className="close-btn" onClick={onClose}>&times;</button>
                 </div>
+            )}
+            {inline && <h2 style={{ marginBottom: '20px' }}>Expenditures</h2>}
 
                 {error && (
                     <div className="error-message" style={{ margin: '0 1.5rem' }}>
@@ -279,6 +285,8 @@ function ManageExpendituresModal({ onClose }) {
                                         <option value="UTILITIES">Utilities</option>
                                         <option value="SUPPLIES">Supplies</option>
                                         <option value="MAINTENANCE">Maintenance</option>
+                                        <option value="CAB_DRIVER_SALARY">Cab Driver's Salary</option>
+                                        <option value="PETROL">Petrol</option>
                                         <option value="MISC">Miscellaneous</option>
                                     </select>
                                 </div>
@@ -419,6 +427,8 @@ function ManageExpendituresModal({ onClose }) {
                                 <option value="UTILITIES">Utilities</option>
                                 <option value="SUPPLIES">Supplies</option>
                                 <option value="MAINTENANCE">Maintenance</option>
+                                <option value="CAB_DRIVER_SALARY">Cab Driver's Salary</option>
+                                <option value="PETROL">Petrol</option>
                                 <option value="MISC">Miscellaneous</option>
                             </select>
                         </div>
@@ -600,6 +610,13 @@ function ManageExpendituresModal({ onClose }) {
                     )}
                 </div>
             </div>
+    );
+
+    if (inline) return body;
+
+    return (
+        <div className="modal-overlay" onClick={onClose}>
+            {body}
         </div>
     );
 }

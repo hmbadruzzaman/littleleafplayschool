@@ -798,11 +798,10 @@ exports.updateInquiryStatus = async (req, res) => {
         const { inquiryId } = req.params;
         const { status, comment } = req.body;
 
-        if (!['NEW', 'IN_PROGRESS', 'FOLLOWED_UP', 'ENROLLED', 'REJECTED'].includes(status)) {
+        if (!['NEW', 'IN_PROGRESS', 'FOLLOWED_UP', 'ENROLLED', 'REJECTED', 'ADMITTED'].includes(status)) {
             return res.status(400).json(errorResponse('Invalid status'));
         }
 
-        // Get current inquiry to append to history
         const currentInquiry = await docClient.get({
             TableName: TABLES.INQUIRIES,
             Key: { inquiryId }
@@ -812,29 +811,38 @@ exports.updateInquiryStatus = async (req, res) => {
             return res.status(404).json(errorResponse('Inquiry not found'));
         }
 
-        // Build follow-up history
         const followUpHistory = currentInquiry.Item.followUpHistory || [];
 
-        // Add new follow-up entry if comment is provided or status is being updated
-        if (comment || status === 'FOLLOWED_UP' || status === 'IN_PROGRESS') {
+        if (comment || status === 'FOLLOWED_UP' || status === 'IN_PROGRESS' || (status === 'ADMITTED' && !currentInquiry.Item.admissionDate)) {
             followUpHistory.push({
                 timestamp: new Date().toISOString(),
                 status: status,
                 comment: comment || '',
-                adminAction: status === 'FOLLOWED_UP' ? 'Marked as Followed Up' : status === 'IN_PROGRESS' ? 'Marked as In Progress' : 'Updated'
+                adminAction: status === 'FOLLOWED_UP'
+                    ? 'Marked as Followed Up'
+                    : status === 'IN_PROGRESS'
+                        ? 'Marked as In Progress'
+                        : status === 'ADMITTED'
+                            ? 'Marked as Admitted'
+                            : 'Updated'
             });
         }
 
-        const updateExpression = 'SET #status = :status, followedUpAt = :followedUpAt, updatedAt = :updatedAt, followUpHistory = :followUpHistory';
-        const expressionAttributeNames = {
-            '#status': 'status'
-        };
+        let updateExpression = 'SET #status = :status, followedUpAt = :followedUpAt, updatedAt = :updatedAt, followUpHistory = :followUpHistory';
+        const expressionAttributeNames = { '#status': 'status' };
         const expressionAttributeValues = {
             ':status': status,
-            ':followedUpAt': (status === 'FOLLOWED_UP' || status === 'IN_PROGRESS') ? new Date().toISOString() : currentInquiry.Item.followedUpAt,
+            ':followedUpAt': (status === 'FOLLOWED_UP' || status === 'IN_PROGRESS')
+                ? new Date().toISOString()
+                : currentInquiry.Item.followedUpAt,
             ':updatedAt': new Date().toISOString(),
             ':followUpHistory': followUpHistory
         };
+
+        if (status === 'ADMITTED' && !currentInquiry.Item.admissionDate) {
+            updateExpression += ', admissionDate = :admissionDate';
+            expressionAttributeValues[':admissionDate'] = new Date().toISOString().split('T')[0];
+        }
 
         await docClient.update({
             TableName: TABLES.INQUIRIES,
@@ -844,7 +852,13 @@ exports.updateInquiryStatus = async (req, res) => {
             ExpressionAttributeValues: expressionAttributeValues
         }).promise();
 
-        res.status(200).json(successResponse(null, 'Inquiry status updated successfully'));
+        const updatedInquiry = await docClient.get({
+            TableName: TABLES.INQUIRIES,
+            Key: { inquiryId },
+            ConsistentRead: true
+        }).promise();
+
+        res.status(200).json(successResponse(updatedInquiry.Item, 'Inquiry status updated successfully'));
     } catch (error) {
         console.error('Update inquiry status error:', error);
         res.status(500).json(errorResponse('Failed to update inquiry status', error));

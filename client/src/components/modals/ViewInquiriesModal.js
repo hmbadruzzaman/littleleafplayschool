@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { adminAPI } from '../../services/api';
 import './Modals.css';
 
-function ViewInquiriesModal({ onClose }) {
+function ViewInquiriesModal({ onClose, inline = false, onPendingCountChange }) {
     const [inquiries, setInquiries] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('ALL'); // ALL, NEW, FOLLOWED_UP, IN_PROGRESS
@@ -15,6 +15,13 @@ function ViewInquiriesModal({ onClose }) {
     useEffect(() => {
         fetchInquiries();
     }, []);
+
+    useEffect(() => {
+        if (onPendingCountChange) {
+            const count = inquiries.filter(inq => inq.status === 'NEW' || inq.status === 'IN_PROGRESS').length;
+            onPendingCountChange(count);
+        }
+    }, [inquiries]);
 
     const fetchInquiries = async () => {
         try {
@@ -96,6 +103,41 @@ function ViewInquiriesModal({ onClose }) {
         }
     };
 
+    const handleMarkAdmitted = async (inquiry) => {
+        if (!window.confirm(`Mark inquiry from ${inquiry.parentName} as admitted? This records today as the admission date.`)) return;
+
+        try {
+            const token = localStorage.getItem('token');
+            const API_URL = window.location.hostname === 'localhost'
+                ? 'http://localhost:5001/api'
+                : 'https://welittleleaf.com/api';
+
+            const response = await fetch(
+                `${API_URL}/admin/inquiries/${encodeURIComponent(inquiry.inquiryId)}/status`,
+                {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ status: 'ADMITTED' })
+                }
+            );
+            const data = await response.json();
+            if (data.success) {
+                setMessage({ type: 'success', text: 'Inquiry marked as admitted' });
+                setInquiries(prev => prev.map(inq =>
+                    inq.inquiryId === inquiry.inquiryId
+                        ? { ...inq, status: 'ADMITTED', admissionDate: new Date().toISOString().split('T')[0] }
+                        : inq
+                ));
+                setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+            } else {
+                setMessage({ type: 'error', text: data.message || 'Failed to update' });
+            }
+        } catch (error) {
+            console.error('Error marking admitted:', error);
+            setMessage({ type: 'error', text: 'Failed to update inquiry status' });
+        }
+    };
+
     const getFilteredInquiries = () => {
         if (filter === 'ALL') return inquiries;
         return inquiries.filter(inq => inq.status === filter);
@@ -104,8 +146,8 @@ function ViewInquiriesModal({ onClose }) {
     const filteredInquiries = getFilteredInquiries();
     const newCount = inquiries.filter(inq => inq.status === 'NEW').length;
     const inProgressCount = inquiries.filter(inq => inq.status === 'IN_PROGRESS').length;
-    const pendingCount = newCount + inProgressCount; // Combined count for badge
     const followedUpCount = inquiries.filter(inq => inq.status === 'FOLLOWED_UP').length;
+    const admittedCount = inquiries.filter(inq => inq.status === 'ADMITTED').length;
 
     const formatDate = (dateString) => {
         const date = new Date(dateString);
@@ -118,13 +160,15 @@ function ViewInquiriesModal({ onClose }) {
         });
     };
 
-    return (
-        <div className="modal-overlay" onClick={onClose}>
-            <div className="modal-content large-modal" onClick={(e) => e.stopPropagation()}>
-                <div className="modal-header">
-                    <h2>Admission Inquiries</h2>
-                    <button className="close-btn" onClick={onClose}>&times;</button>
-                </div>
+    const body = (
+        <>
+            <div className={inline ? '' : 'modal-content large-modal'} onClick={(e) => e.stopPropagation()}>
+                {!inline && (
+                    <div className="modal-header">
+                        <h2>Admission Inquiries</h2>
+                        <button className="close-btn" onClick={onClose}>&times;</button>
+                    </div>
+                )}
 
                 <div className="modal-body">
                     {/* Filter Tabs */}
@@ -153,6 +197,12 @@ function ViewInquiriesModal({ onClose }) {
                         >
                             Followed Up ({followedUpCount})
                         </button>
+                        <button
+                            className={filter === 'ADMITTED' ? 'active' : ''}
+                            onClick={() => setFilter('ADMITTED')}
+                        >
+                            Admitted ({admittedCount})
+                        </button>
                     </div>
 
                     {message.text && (
@@ -175,7 +225,7 @@ function ViewInquiriesModal({ onClose }) {
                                         <div className="inquiry-info">
                                             <h3>{inquiry.studentName}</h3>
                                             <span className={`status-badge ${inquiry.status.toLowerCase()}`}>
-                                                {inquiry.status === 'NEW' ? 'New' : inquiry.status === 'IN_PROGRESS' ? 'In Progress' : 'Followed Up'}
+                                                {inquiry.status === 'NEW' ? 'New' : inquiry.status === 'IN_PROGRESS' ? 'In Progress' : inquiry.status === 'ADMITTED' ? 'Admitted' : 'Followed Up'}
                                             </span>
                                         </div>
                                         <div className="inquiry-date">
@@ -248,16 +298,30 @@ function ViewInquiriesModal({ onClose }) {
                                         )}
                                     </div>
 
-                                    {(inquiry.status === 'NEW' || inquiry.status === 'IN_PROGRESS') && (
-                                        <div className="inquiry-actions">
+                                    <div className="inquiry-actions">
+                                        {(inquiry.status === 'NEW' || inquiry.status === 'IN_PROGRESS') && (
                                             <button
                                                 className="btn btn-primary btn-sm"
                                                 onClick={() => openFollowUpModal(inquiry)}
                                             >
                                                 {inquiry.status === 'IN_PROGRESS' ? 'Update Follow-up' : 'Follow Up'}
                                             </button>
-                                        </div>
-                                    )}
+                                        )}
+                                        {inquiry.status !== 'ADMITTED' && (
+                                            <button
+                                                onClick={() => handleMarkAdmitted(inquiry)}
+                                                className="btn btn-primary btn-sm"
+                                                style={{ fontSize: '0.8rem', padding: '4px 10px', background: '#16a34a', border: 'none' }}
+                                            >
+                                                ✓ Mark as Admitted
+                                            </button>
+                                        )}
+                                        {inquiry.status === 'ADMITTED' && (
+                                            <span style={{ color: '#16a34a', fontWeight: '600', fontSize: '0.875rem' }}>
+                                                ✓ Admitted{inquiry.admissionDate ? ` on ${inquiry.admissionDate}` : ''}
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -331,6 +395,14 @@ function ViewInquiriesModal({ onClose }) {
                     </div>
                 </div>
             )}
+        </>
+    );
+
+    if (inline) return body;
+
+    return (
+        <div className="modal-overlay" onClick={onClose}>
+            {body}
         </div>
     );
 }

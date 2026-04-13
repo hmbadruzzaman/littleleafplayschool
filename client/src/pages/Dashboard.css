@@ -793,3 +793,13 @@
 .table thead th[style*="cursor: pointer"]:active {
     background-color: #e5e7eb;
 }
+
+.status-badge.inactive {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.status-badge.active {
+    background: #f0fdf4;
+    color: #16a34a;
+}

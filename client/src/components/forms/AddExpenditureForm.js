@@ -79,6 +79,8 @@ function AddExpenditureForm({ onClose, onSuccess }) {
                                 <option value="UTILITIES">Utilities</option>
                                 <option value="SUPPLIES">Supplies</option>
                                 <option value="MAINTENANCE">Maintenance</option>
+                                <option value="CAB_DRIVER_SALARY">Cab Driver's Salary</option>
+                                <option value="PETROL">Petrol</option>
                                 <option value="MISC">Miscellaneous</option>
                             </select>
                         </div>

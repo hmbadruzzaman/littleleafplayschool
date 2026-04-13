@@ -14,6 +14,7 @@ function StudentDetailsModal({ student, onClose, onUpdate }) {
     const [showAttendance, setShowAttendance] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
     if (!student) return null;
 
@@ -59,6 +60,40 @@ function StudentDetailsModal({ student, onClose, onUpdate }) {
         } finally {
             setIsDeleting(false);
             setShowDeleteConfirm(false);
+        }
+    };
+
+    const handleToggleStatus = async () => {
+        const newStatus = student.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+        const confirmMsg = newStatus === 'INACTIVE'
+            ? `Mark ${student.fullName} as inactive? They will be hidden from reports and the active student list. Their pending dues will remain visible and can still be settled.`
+            : `Reactivate ${student.fullName}? They will appear in the active student list again.`;
+        if (!window.confirm(confirmMsg)) return;
+
+        setIsUpdatingStatus(true);
+        try {
+            const token = localStorage.getItem('token');
+            const API_URL = window.location.hostname === 'localhost'
+                ? 'http://localhost:5001/api'
+                : 'https://welittleleaf.com/api';
+            const res = await fetch(`${API_URL}/admin/students/${encodeURIComponent(student.studentId)}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ status: newStatus })
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert(`Student marked as ${newStatus.toLowerCase()} successfully`);
+                if (onUpdate) onUpdate();
+                onClose();
+            } else {
+                alert(data.message || 'Failed to update student status');
+            }
+        } catch (error) {
+            console.error('Error updating student status:', error);
+            alert('An error occurred');
+        } finally {
+            setIsUpdatingStatus(false);
         }
     };
 
@@ -188,20 +223,30 @@ function StudentDetailsModal({ student, onClose, onUpdate }) {
                     </div>
 
                     <div className="modal-footer" style={{ justifyContent: 'space-between' }}>
-                        <button
-                            onClick={() => setShowDeleteConfirm(true)}
-                            className="btn btn-danger"
-                            style={{
-                                backgroundColor: '#ef4444',
-                                color: 'white',
-                                border: 'none'
-                            }}
-                        >
-                            🗑️ Delete Student
-                        </button>
-                        <button onClick={onClose} className="btn btn-secondary">
-                            Close
-                        </button>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <button
+                                onClick={handleToggleStatus}
+                                className="btn"
+                                disabled={isUpdatingStatus}
+                                style={{
+                                    backgroundColor: student.status === 'ACTIVE' ? '#f59e0b' : '#10b981',
+                                    color: 'white',
+                                    border: 'none'
+                                }}
+                            >
+                                {isUpdatingStatus
+                                    ? 'Updating...'
+                                    : student.status === 'ACTIVE' ? '⏸ Mark Inactive' : '▶ Mark Active'}
+                            </button>
+                            <button
+                                onClick={() => setShowDeleteConfirm(true)}
+                                className="btn btn-danger"
+                                style={{ backgroundColor: '#ef4444', color: 'white', border: 'none' }}
+                            >
+                                🗑️ Delete Student
+                            </button>
+                        </div>
+                        <button onClick={onClose} className="btn btn-secondary">Close</button>
                     </div>
                 </div>
             </div>
