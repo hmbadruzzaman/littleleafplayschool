@@ -69,24 +69,24 @@ function FeesSection() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
 
             {/* ── KPI strip ───────────────────────── */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
+            <div className="ll-dash-kpis">
                 {[
                     { label: 'Collected · This month', value: fmt(monthEarnings), sub: `${txCount} payments`, accent: 'var(--success-color)' },
                     { label: 'Collected · This year',  value: fmt(yearEarnings),  sub: 'across all types',    accent: 'var(--moss-dark)'      },
                     { label: 'Pending dues',            value: fmt(totalPending),  sub: `${pendingCount} families`,  accent: 'var(--error-color)'   },
                     { label: 'Collection rate',         value: loading ? '—' : `${collectionRate}%`, sub: 'year to date', accent: collectionRate >= 80 ? 'var(--success-color)' : 'var(--warning-color)' },
                 ].map((k, i) => (
-                    <div key={i} style={{ background: 'var(--surface)', border: '1px solid var(--border-soft)', borderRadius: 'var(--radius)', padding: '20px 22px', position: 'relative', overflow: 'hidden' }}>
+                    <div key={i} className="ll-dash-kpi" style={{ background: 'var(--surface)', border: '1px solid var(--border-soft)', borderRadius: 'var(--radius)', padding: '20px 22px', position: 'relative', overflow: 'hidden' }}>
                         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: k.accent }} />
-                        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 12 }}>{k.label}</div>
-                        <div style={{ fontFamily: 'var(--font-display)', fontSize: 34, color: 'var(--forest-900)', lineHeight: 1 }}>{loading ? '…' : k.value}</div>
+                        <div className="ll-dash-kpi__label" style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 12 }}>{k.label}</div>
+                        <div className="ll-dash-kpi__value" style={{ fontFamily: 'var(--font-display)', fontSize: 34, color: 'var(--forest-900)', lineHeight: 1 }}>{loading ? '…' : k.value}</div>
                         <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8 }}>{k.sub}</div>
                     </div>
                 ))}
             </div>
 
             {/* ── Main two-column layout ───────────── */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 16, alignItems: 'start' }}>
+            <div className="ll-dash-split ll-dash-split--fees">
 
                 {/* Left: earnings by fee type (acts as "recent payments" breakdown) */}
                 <div style={{ background: 'var(--surface)', border: '1px solid var(--border-soft)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>

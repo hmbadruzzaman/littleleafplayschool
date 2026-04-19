@@ -225,23 +225,23 @@ function ReportsSection() {
             {!reportLoading && reports && (
                 <>
                     {/* 3 KPI cards */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
+                    <div className="ll-dash-kpis ll-dash-kpis--three">
                         {[
                             { label: 'Total Earnings',   value: fmt(earnings),    sub: `${reports.earnings?.transactionCount || 0} transactions`,  accent: 'var(--success-color)', bg: 'var(--success-bg)'   },
                             { label: 'Total Expenditure', value: fmt(expenditure), sub: `${reports.expenditure?.transactionCount || 0} transactions`, accent: 'var(--error-color)',   bg: 'var(--error-bg)'     },
                             { label: net >= 0 ? 'Net Profit' : 'Net Loss', value: fmt(Math.abs(net)), sub: `${((net / (earnings || 1)) * 100).toFixed(1)}% margin`, accent: net >= 0 ? 'var(--success-color)' : 'var(--warning-color)', bg: net >= 0 ? 'var(--success-bg)' : 'var(--warning-bg)' },
                         ].map((k, i) => (
-                            <div key={i} style={{ background: k.bg, border: `1px solid ${k.accent}30`, borderRadius: 'var(--radius)', padding: '24px', position: 'relative', overflow: 'hidden' }}>
+                            <div key={i} className="ll-dash-kpi" style={{ background: k.bg, border: `1px solid ${k.accent}30`, borderRadius: 'var(--radius)', padding: '24px', position: 'relative', overflow: 'hidden' }}>
                                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: k.accent }} />
-                                <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: k.accent, marginBottom: 12 }}>{k.label}</div>
-                                <div style={{ fontFamily: 'var(--font-display)', fontSize: 38, color: 'var(--forest-900)', lineHeight: 1 }}>{k.value}</div>
+                                <div className="ll-dash-kpi__label" style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: k.accent, marginBottom: 12 }}>{k.label}</div>
+                                <div className="ll-dash-kpi__value" style={{ fontFamily: 'var(--font-display)', fontSize: 38, color: 'var(--forest-900)', lineHeight: 1 }}>{k.value}</div>
                                 <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8 }}>{k.sub}</div>
                             </div>
                         ))}
                     </div>
 
                     {/* Money flow — side by side */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(440px, 1fr))', gap: 14 }}>
+                    <div className="ll-dash-split ll-dash-split--charts">
                         <ChartCard
                             eyebrow="Earnings Breakdown"
                             title="Where the money comes from"

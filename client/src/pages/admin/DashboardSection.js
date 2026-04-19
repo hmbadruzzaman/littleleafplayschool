@@ -121,17 +121,17 @@ function DashboardSection({ onNavigate, onPendingInquiriesCount }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
 
             {/* ── 4 KPI cards ───────────────────────── */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
+            <div className="ll-dash-kpis">
                 {[
                     { label: 'Active Students', value: activeStu,          sub: `${totalStu} enrolled`, accent: '#4a5d3f', trend: 'up' },
                     { label: 'Teachers',        value: teachers.length,    sub: 'on staff',             accent: '#c97b5b', trend: null },
                     { label: 'Total Earnings',  value: fmt(earnings),      sub: 'this period',          accent: '#5a8a4f', trend: 'up' },
                     { label: 'Net in Hand',     value: fmt(Math.abs(net)), sub: net >= 0 ? 'profit' : 'deficit', accent: net >= 0 ? '#5a8a4f' : '#b85b4a', trend: net >= 0 ? 'up' : 'down' },
                 ].map((k, i) => (
-                    <div key={i} style={{ background: 'var(--surface)', border: '1px solid var(--border-soft)', borderRadius: 'var(--radius)', padding: '20px 22px', position: 'relative', overflow: 'hidden' }}>
+                    <div key={i} className="ll-dash-kpi" style={{ background: 'var(--surface)', border: '1px solid var(--border-soft)', borderRadius: 'var(--radius)', padding: '20px 22px', position: 'relative', overflow: 'hidden' }}>
                         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: k.accent }} />
-                        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 12 }}>{k.label}</div>
-                        <div style={{ fontFamily: 'var(--font-display)', fontSize: 38, color: 'var(--forest-900)', lineHeight: 1 }}>{k.value}</div>
+                        <div className="ll-dash-kpi__label" style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 12 }}>{k.label}</div>
+                        <div className="ll-dash-kpi__value" style={{ fontFamily: 'var(--font-display)', fontSize: 38, color: 'var(--forest-900)', lineHeight: 1 }}>{k.value}</div>
                         <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
                             {k.trend && <Icon name={k.trend === 'up' ? 'arrow_u' : 'arrow_d'} size={13} color={k.trend === 'up' ? 'var(--success-color)' : 'var(--error-color)'} />}
                             <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{k.sub}</span>
@@ -141,7 +141,7 @@ function DashboardSection({ onNavigate, onPendingInquiriesCount }) {
             </div>
 
             {/* ── Financial card + quick actions ────── */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.7fr 1fr', gap: 16 }}>
+            <div className="ll-dash-split ll-dash-split--fin">
                 {/* Financial */}
                 <div style={{ background: 'var(--surface)', border: '1px solid var(--border-soft)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 24px', borderBottom: '1px solid var(--border-soft)', background: 'var(--cream-50)' }}>
@@ -219,7 +219,7 @@ function DashboardSection({ onNavigate, onPendingInquiriesCount }) {
             </div>
 
             {/* ── Class distribution + headline counts ─ */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.6fr', gap: 16 }}>
+            <div className="ll-dash-split ll-dash-split--class">
 
                 {/* Class bars — real data */}
                 <div style={{ background: 'var(--surface)', border: '1px solid var(--border-soft)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>

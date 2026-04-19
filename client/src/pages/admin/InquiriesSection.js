@@ -93,7 +93,7 @@ function InquiriesSection({ onPendingCountChange }) {
             </div>
 
             {/* ── Body: list + detail ─────────────────── */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, alignItems: 'start' }}>
+            <div className="ll-inquiries-split">
 
             {/* ── Left: inquiry list ─────────────────── */}
             <div style={{ background: 'var(--surface)', border: '1px solid var(--border-soft)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>
@@ -172,7 +172,7 @@ function InquiriesSection({ onPendingCountChange }) {
             </div>
 
             {/* ── Right: detail + actions ────────────── */}
-            <div style={{ position: 'sticky', top: 90 }}>
+            <div className="ll-inquiries-detail">
                 {selected ? (
                     <div style={{ background: 'var(--surface)', border: '1px solid var(--border-soft)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>
                         <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--border-soft)', background: 'var(--cream-50)' }}>

@@ -431,3 +431,84 @@
 .ll-admin__content .table th {
     background: var(--cream-100);
 }
+
+/* ── Inquiries section ────────────────────────────── */
+.ll-inquiries-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    align-items: start;
+}
+
+.ll-inquiries-detail {
+    position: sticky;
+    top: 90px;
+}
+
+@media (max-width: 900px) {
+    .ll-inquiries-split {
+        grid-template-columns: 1fr;
+    }
+    .ll-inquiries-detail {
+        position: static;
+    }
+}
+
+/* ── Dashboard overview section ───────────────────── */
+.ll-dash-kpis {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+}
+
+.ll-dash-kpis--three {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.ll-dash-split {
+    display: grid;
+    gap: 16px;
+}
+
+.ll-dash-split--fin {
+    grid-template-columns: 1.7fr 1fr;
+}
+
+.ll-dash-split--class {
+    grid-template-columns: 1fr 1.6fr;
+}
+
+.ll-dash-split--fees {
+    grid-template-columns: 1.4fr 1fr;
+    align-items: start;
+}
+
+.ll-dash-split--charts {
+    grid-template-columns: 1fr 1fr;
+}
+
+@media (max-width: 900px) {
+    .ll-dash-kpis,
+    .ll-dash-kpis--three {
+        grid-template-columns: 1fr 1fr;
+    }
+    .ll-dash-split--fin,
+    .ll-dash-split--class,
+    .ll-dash-split--fees,
+    .ll-dash-split--charts {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .ll-dash-kpi {
+        padding: 16px 14px !important;
+    }
+    .ll-dash-kpi__value {
+        font-size: 26px !important;
+    }
+    .ll-dash-kpi__label {
+        font-size: 10px !important;
+        margin-bottom: 8px !important;
+    }
+}
