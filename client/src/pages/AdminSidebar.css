@@ -512,3 +512,35 @@
         margin-bottom: 8px !important;
     }
 }
+
+/* Financial card internals */
+.ll-dash-fin-head {
+    flex-wrap: wrap;
+}
+
+.ll-dash-fin-numbers {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+}
+
+.ll-dash-fin-numbers__cell[data-idx="0"],
+.ll-dash-fin-numbers__cell[data-idx="1"] {
+    border-right: 1px solid var(--border-soft);
+}
+
+@media (max-width: 640px) {
+    .ll-dash-fin-numbers {
+        grid-template-columns: 1fr;
+    }
+    .ll-dash-fin-numbers__cell[data-idx="0"],
+    .ll-dash-fin-numbers__cell[data-idx="1"] {
+        border-right: none;
+        border-bottom: 1px solid var(--border-soft);
+    }
+    .ll-dash-fin-numbers__cell {
+        padding: 14px 20px !important;
+    }
+    .ll-dash-fin-numbers__value {
+        font-size: 24px !important;
+    }
+}

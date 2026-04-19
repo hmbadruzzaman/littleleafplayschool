@@ -183,7 +183,7 @@ function DashboardSection({ onNavigate, onPendingInquiriesCount }) {
             <div className="ll-dash-split ll-dash-split--fin">
                 {/* Financial */}
                 <div style={{ background: 'var(--surface)', border: '1px solid var(--border-soft)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 24px', borderBottom: '1px solid var(--border-soft)', background: 'var(--cream-50)' }}>
+                    <div className="ll-dash-fin-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 24px', borderBottom: '1px solid var(--border-soft)', background: 'var(--cream-50)', gap: 12 }}>
                         <div>
                             <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 4 }}>Financial health</div>
                             <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 400, color: 'var(--forest-900)', margin: 0 }}>Earnings vs. Expenditure</h3>
@@ -197,15 +197,15 @@ function DashboardSection({ onNavigate, onPendingInquiriesCount }) {
                         </select>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr' }}>
+                    <div className="ll-dash-fin-numbers">
                         {[
                             { label: 'Earnings',    value: fmt(earnings),    color: 'var(--success-color)', sub: 'collected' },
                             { label: 'Expenditure', value: fmt(expenditure), color: 'var(--error-color)',   sub: 'spent' },
                             { label: 'In Hand',     value: fmt(Math.abs(net)), color: net >= 0 ? 'var(--moss-dark)' : 'var(--error-color)', sub: net >= 0 ? 'profit' : 'deficit' },
                         ].map((f, i) => (
-                            <div key={i} style={{ padding: '22px 24px', borderRight: i < 2 ? '1px solid var(--border-soft)' : 'none' }}>
+                            <div key={i} className="ll-dash-fin-numbers__cell" data-idx={i} style={{ padding: '22px 24px' }}>
                                 <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 10 }}>{f.label}</div>
-                                <div style={{ fontFamily: 'var(--font-display)', fontSize: 30, color: f.color, lineHeight: 1 }}>{f.value}</div>
+                                <div className="ll-dash-fin-numbers__value" style={{ fontFamily: 'var(--font-display)', fontSize: 30, color: f.color, lineHeight: 1 }}>{f.value}</div>
                                 <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>{f.sub}</div>
                             </div>
                         ))}
