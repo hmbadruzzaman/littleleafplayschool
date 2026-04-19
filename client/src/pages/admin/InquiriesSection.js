@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { adminAPI } from '../../services/api';
 import InquiryForm from '../../components/forms/InquiryForm';
 
@@ -20,8 +20,19 @@ function InquiriesSection({ onPendingCountChange }) {
     const [updating, setUpdating]         = useState(false);
     const [showAddInquiry, setShowAdd]    = useState(false);
     const [closeFor, setCloseFor]         = useState(null); // inquiry being closed
+    const detailRef = useRef(null);
 
     useEffect(() => { fetchInquiries(); }, []);
+
+    const handleSelect = (inq) => {
+        setSelected(inq);
+        if (window.innerWidth <= 900) {
+            // Give the detail panel a tick to render with the new data, then scroll to it
+            requestAnimationFrame(() => {
+                detailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+        }
+    };
 
     const fetchInquiries = async () => {
         try {
@@ -136,7 +147,7 @@ function InquiriesSection({ onPendingCountChange }) {
                         const isSelected = selected?.inquiryId === inq.inquiryId;
                         return (
                             <div key={inq.inquiryId || i}
-                                onClick={() => setSelected(inq)}
+                                onClick={() => handleSelect(inq)}
                                 style={{
                                     padding: '16px 24px',
                                     borderBottom: '1px solid var(--border-soft)',
@@ -172,7 +183,7 @@ function InquiriesSection({ onPendingCountChange }) {
             </div>
 
             {/* ── Right: detail + actions ────────────── */}
-            <div className="ll-inquiries-detail">
+            <div className="ll-inquiries-detail" ref={detailRef}>
                 {selected ? (
                     <div style={{ background: 'var(--surface)', border: '1px solid var(--border-soft)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>
                         <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--border-soft)', background: 'var(--cream-50)' }}>

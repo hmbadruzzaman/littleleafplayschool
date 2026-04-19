@@ -690,6 +690,65 @@
     color: var(--moss-dark);
 }
 
+/* ── Day timeline ─────────────────────────────────── */
+.ll-daytimeline {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-width: 820px;
+    border-top: 1px solid var(--border-soft);
+}
+
+.ll-daytimeline__row {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    gap: 32px;
+    align-items: baseline;
+    padding: 28px 0;
+    border-bottom: 1px solid var(--border-soft);
+}
+
+.ll-daytimeline__time {
+    font-family: var(--font-mono, 'JetBrains Mono', 'SFMono-Regular', ui-monospace, monospace);
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    color: var(--moss);
+    text-transform: uppercase;
+    padding-top: 4px;
+}
+
+.ll-daytimeline__title {
+    font-family: var(--font-display);
+    font-size: 26px;
+    color: var(--forest-900);
+    margin: 0 0 6px;
+    line-height: 1.15;
+}
+
+.ll-daytimeline__desc {
+    color: var(--forest-700, var(--forest-900));
+    margin: 0;
+    line-height: 1.55;
+    max-width: 52ch;
+}
+
+/* ── Gallery tease (collapsed state) ─────────────── */
+.ll-gallery-tease {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+    padding: 40px 0 8px;
+    max-width: 560px;
+}
+
+.ll-gallery-tease__copy {
+    color: var(--forest-700, var(--forest-900));
+    margin: 0;
+    line-height: 1.6;
+    font-size: 17px;
+}
+
 /* ── Responsive ───────────────────────────────────── */
 @media (max-width: 1024px) {
     .ll-hero__inner { grid-template-columns: 1fr; }
@@ -724,4 +783,7 @@
     .ll-gallery__item--wide { grid-column: span 1; }
     .ll-programs { grid-template-columns: 1fr; }
     .ll-marquee__track { font-size: 22px; }
+    .ll-daytimeline__row { grid-template-columns: 1fr; gap: 6px; padding: 20px 0; }
+    .ll-daytimeline__time { padding-top: 0; font-size: 12px; }
+    .ll-daytimeline__title { font-size: 22px; }
 }

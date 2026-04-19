@@ -451,6 +451,7 @@
     }
     .ll-inquiries-detail {
         position: static;
+        scroll-margin-top: 90px;
     }
 }
 

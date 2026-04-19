@@ -13,6 +13,7 @@ function LandingPage() {
     const [loading, setLoading] = useState(true);
     const [showInquiryForm, setShowInquiryForm] = useState(false);
     const [mobileNavOpen, setMobileNavOpen] = useState(false);
+    const [showGallery, setShowGallery] = useState(false);
 
     useEffect(() => { fetchData(); }, []);
 
@@ -183,12 +184,43 @@ function LandingPage() {
                 </div>
             </section>
 
-            {/* ── About / key personnel ─────────────── */}
-            <section className="ll-section ll-section--tinted" id="about">
+            {/* ── A day at Little Leaf ──────────────── */}
+            <section className="ll-section ll-section--tinted" id="schedule">
                 <div className="container">
                     <div className="ll-section__head">
                         <div>
-                            <div className="ll-eyebrow">02 — People</div>
+                            <div className="ll-eyebrow">02 — A day at Little Leaf</div>
+                            <h2 className="ll-section__title">From <em>sleepy arrivals</em><br />to proud goodbyes.</h2>
+                        </div>
+                    </div>
+                    <ol className="ll-daytimeline">
+                        {[
+                            { time: '10:00 AM', title: 'Arrival',          desc: 'Warm hellos at the gate and a gentle transition from home to school.' },
+                            { time: '10:15 AM', title: 'Morning assembly', desc: 'Good-morning songs, prayer, and a peek at today\u2019s weather.' },
+                            { time: '10:30 AM', title: 'Circle and Story', desc: 'Gathered on the mat for stories, rhymes, and wide-eyed wonder.' },
+                            { time: '11:00 AM', title: 'Classes',          desc: 'Phonics, numbers, and themed learning in small, focused groups.' },
+                            { time: '12:00 PM', title: 'Exploration time', desc: 'Art, sensory play, and free-choice corners that follow their curiosity.' },
+                            { time: '12:30 PM', title: 'Snack',            desc: 'A quiet break to refuel \u2014 healthy bites and chatter with friends.' },
+                            { time: '1:00 PM',  title: 'Fun and games',    desc: 'Outdoor play and group games, then happy goodbyes at home time.' },
+                        ].map((s, i) => (
+                            <li key={i} className="ll-daytimeline__row">
+                                <div className="ll-daytimeline__time">{s.time}</div>
+                                <div className="ll-daytimeline__body">
+                                    <h3 className="ll-daytimeline__title">{s.title}</h3>
+                                    <p className="ll-daytimeline__desc">{s.desc}</p>
+                                </div>
+                            </li>
+                        ))}
+                    </ol>
+                </div>
+            </section>
+
+            {/* ── About / key personnel ─────────────── */}
+            <section className="ll-section" id="about">
+                <div className="container">
+                    <div className="ll-section__head">
+                        <div>
+                            <div className="ll-eyebrow">03 — People</div>
                             <h2 className="ll-section__title">The grown-ups<br /><em>who make it home.</em></h2>
                         </div>
                     </div>
@@ -243,11 +275,11 @@ function LandingPage() {
 
             {/* ── Holidays ──────────────────────────── */}
             {upcomingHolidays.length > 0 && (
-                <section className="ll-section">
+                <section className="ll-section ll-section--tinted">
                     <div className="container">
                         <div className="ll-section__head">
                             <div>
-                                <div className="ll-eyebrow">03 — Calendar</div>
+                                <div className="ll-eyebrow">04 — Calendar</div>
                                 <h2 className="ll-section__title">Upcoming <em>holidays</em></h2>
                             </div>
                         </div>
@@ -275,29 +307,46 @@ function LandingPage() {
 
             {/* ── Gallery ───────────────────────────── */}
             {gallery.length > 0 && (
-                <section className="ll-section ll-section--tinted" id="gallery">
+                <section className="ll-section" id="gallery">
                     <div className="container">
                         <div className="ll-section__head">
                             <div>
-                                <div className="ll-eyebrow">04 — Gallery</div>
+                                <div className="ll-eyebrow">05 — Gallery</div>
                                 <h2 className="ll-section__title"><em>Days</em>, remembered.</h2>
                             </div>
+                            {showGallery && (
+                                <button className="btn btn-ghost btn-sm" onClick={() => setShowGallery(false)}>
+                                    Hide gallery
+                                </button>
+                            )}
                         </div>
-                        <div className="ll-gallery">
-                            {gallery.map((item, i) => (
-                                <div key={i} className={`ll-gallery__item ${i === 0 ? 'll-gallery__item--wide' : ''}`}>
-                                    {item.mediaType === 'PHOTO' ? (
-                                        <img src={item.thumbnailUrl || item.s3Url} alt={item.title} />
-                                    ) : (
-                                        <div className="ll-gallery__video">
-                                            <div className="ll-gallery__play">▶</div>
-                                            <span>{item.title}</span>
-                                        </div>
-                                    )}
-                                    {item.title && <p className="ll-gallery__caption">{item.title}</p>}
-                                </div>
-                            ))}
-                        </div>
+                        {showGallery ? (
+                            <div className="ll-gallery">
+                                {gallery.map((item, i) => (
+                                    <div key={i} className={`ll-gallery__item ${i === 0 ? 'll-gallery__item--wide' : ''}`}>
+                                        {item.mediaType === 'PHOTO' ? (
+                                            <img src={item.thumbnailUrl || item.s3Url} alt={item.title} loading="lazy" />
+                                        ) : (
+                                            <div className="ll-gallery__video">
+                                                <div className="ll-gallery__play">▶</div>
+                                                <span>{item.title}</span>
+                                            </div>
+                                        )}
+                                        {item.title && <p className="ll-gallery__caption">{item.title}</p>}
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="ll-gallery-tease">
+                                <p className="ll-gallery-tease__copy">
+                                    {gallery.length} photos &amp; moments from around school —
+                                    art corners, story circles, birthday smiles, and muddy shoes.
+                                </p>
+                                <button className="btn btn-primary btn-lg" onClick={() => setShowGallery(true)}>
+                                    Show the gallery →
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </section>
             )}
@@ -307,7 +356,7 @@ function LandingPage() {
                 <div className="ll-contact__blob" />
                 <div className="container ll-contact__inner">
                     <div className="ll-contact__copy">
-                        <div className="ll-eyebrow ll-eyebrow--light">05 — Come say hello</div>
+                        <div className="ll-eyebrow ll-eyebrow--light">06 — Come say hello</div>
                         <h2 className="ll-contact__h2">
                             Pop by for a<br /><em>cup of tea</em><br />and a tour.
                         </h2>
