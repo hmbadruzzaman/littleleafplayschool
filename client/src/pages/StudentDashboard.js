@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { studentAPI } from '../services/api';
+import LeafMark from '../components/common/LeafMark';
 import './Dashboard.css';
 
 function StudentDashboard() {
@@ -8,9 +9,7 @@ function StudentDashboard() {
     const [dashboardData, setDashboardData] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        fetchDashboard();
-    }, []);
+    useEffect(() => { fetchDashboard(); }, []);
 
     const fetchDashboard = async () => {
         try {
@@ -23,227 +22,188 @@ function StudentDashboard() {
         }
     };
 
-    if (loading) {
-        return <div className="loading">Loading dashboard...</div>;
-    }
+    if (loading) return <div className="loading">Loading dashboard…</div>;
 
     const { student, fees, exams, holidays } = dashboardData || {};
+    const firstName = student?.fullName?.split(' ')[0] || 'there';
 
     return (
-        <div className="dashboard student-dashboard">
-            <header className="dashboard-header student-header">
-                <div className="container">
-                    <div className="header-content">
-                        <div className="welcome-section">
-                            <div className="student-avatar">
-                                {student?.fullName?.charAt(0) || 'S'}
-                            </div>
-                            <div>
-                                <h1>Welcome back, {student?.fullName?.split(' ')[0]}! 👋</h1>
-                                <p className="student-subtitle">{student?.class} • Roll No: {student?.rollNumber}</p>
-                            </div>
-                        </div>
-                        <button onClick={logout} className="btn btn-logout">Logout</button>
+        <div className="ll-portal">
+            {/* Header */}
+            <header className="ll-portal__header">
+                <div className="container ll-portal__header-inner">
+                    <div className="ll-portal__logo">
+                        <div className="ll-portal__logo-icon"><LeafMark size={18} /></div>
+                        <span>Little Leaf</span>
+                    </div>
+                    <div className="ll-portal__header-right">
+                        <span className="ll-portal__role-pill">Student Portal</span>
+                        <div className="ll-portal__avatar">{student?.fullName?.charAt(0) || 'S'}</div>
+                        <button onClick={logout} className="btn btn-ghost" style={{ fontSize: 13 }}>Sign out</button>
                     </div>
                 </div>
             </header>
 
-            <div className="dashboard-content container">
-                {/* Quick Stats Cards */}
-                <div className="student-stats-grid">
-                    <div className="stat-card stat-paid">
-                        <div className="stat-icon">💰</div>
-                        <div className="stat-content">
-                            <p className="stat-label">Total Paid</p>
-                            <p className="stat-value">₹{fees?.totalPaid || 0}</p>
+            <div className="container ll-portal__body">
+
+                {/* Welcome banner */}
+                <div className="ll-portal__welcome">
+                    <div className="ll-portal__welcome-blob" />
+                    <div className="ll-portal__welcome-text">
+                        <div className="ll-eyebrow ll-eyebrow--light" style={{ marginBottom: 10 }}>
+                            {student?.class} · Roll {student?.rollNumber}
                         </div>
-                    </div>
-                    <div className="stat-card stat-pending">
-                        <div className="stat-icon">📝</div>
-                        <div className="stat-content">
-                            <p className="stat-label">Pending Fees</p>
-                            <p className="stat-value">₹{fees?.totalPending || 0}</p>
-                            {fees?.pendingBreakdown && fees.pendingBreakdown.length > 0 && (
-                                <div className="pending-breakdown">
-                                    {fees.pendingBreakdown.map((item, index) => (
-                                        <div key={index} className="breakdown-item">
-                                            <span className="breakdown-type">
-                                                {item.feeType.replace(/_/g, ' ')}
-                                            </span>
-                                            <span className="breakdown-amount">₹{item.pendingAmount}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                    <div className="stat-card stat-exams">
-                        <div className="stat-icon">📚</div>
-                        <div className="stat-content">
-                            <p className="stat-label">Upcoming Exams</p>
-                            <p className="stat-value">{exams?.upcoming?.length || 0}</p>
-                        </div>
-                    </div>
-                    <div className="stat-card stat-holidays">
-                        <div className="stat-icon">🎉</div>
-                        <div className="stat-content">
-                            <p className="stat-label">Upcoming Holidays</p>
-                            <p className="stat-value">{holidays?.length || 0}</p>
-                        </div>
+                        <h1>Hello, {firstName}.</h1>
+                        <p>Here's how things are looking for you today.</p>
                     </div>
                 </div>
 
-                {/* Student Info Card */}
-                <div className="card modern-card">
-                    <div className="card-header-modern">
-                        <h2>👤 Student Information</h2>
-                    </div>
-                    <div className="info-grid-modern">
-                        <div className="info-item-modern">
-                            <span className="info-icon">🎓</span>
-                            <div>
-                                <p className="info-label">Class</p>
-                                <p className="info-value">{student?.class}</p>
-                            </div>
-                        </div>
-                        <div className="info-item-modern">
-                            <span className="info-icon">👨‍👩‍👦</span>
-                            <div>
-                                <p className="info-label">Parent Name</p>
-                                <p className="info-value">{student?.parentName}</p>
-                            </div>
-                        </div>
-                        <div className="info-item-modern">
-                            <span className="info-icon">📞</span>
-                            <div>
-                                <p className="info-label">Parent Phone</p>
-                                <p className="info-value">{student?.parentPhone}</p>
-                            </div>
-                        </div>
-                        {student?.parentEmail && (
-                            <div className="info-item-modern">
-                                <span className="info-icon">📧</span>
-                                <div>
-                                    <p className="info-label">Parent Email</p>
-                                    <p className="info-value">{student?.parentEmail}</p>
-                                </div>
+                {/* Fee + exam + holiday quick cards */}
+                <div className="ll-portal__quick-grid">
+                    <div className={`ll-quick-card ${fees?.totalPending > 0 ? 'll-quick-card--warn' : 'll-quick-card--ok'}`}>
+                        <div className="ll-quick-card__label">Fees paid</div>
+                        <div className="ll-quick-card__value">₹{fees?.totalPaid || 0}</div>
+                        {fees?.totalPending > 0 ? (
+                            <div className="ll-quick-card__sub warn">₹{fees.totalPending} pending</div>
+                        ) : (
+                            <div className="ll-quick-card__sub ok">All clear ✓</div>
+                        )}
+                        {fees?.pendingBreakdown?.length > 0 && (
+                            <div className="ll-quick-card__breakdown">
+                                {fees.pendingBreakdown.map((item, i) => (
+                                    <div key={i} className="ll-quick-card__breakdown-row">
+                                        <span>{item.feeType.replace(/_/g, ' ')}</span>
+                                        <span>₹{item.pendingAmount}</span>
+                                    </div>
+                                ))}
                             </div>
                         )}
                     </div>
+
+                    <div className="ll-quick-card">
+                        <div className="ll-quick-card__label">Upcoming exams</div>
+                        <div className="ll-quick-card__value">{exams?.upcoming?.length || 0}</div>
+                        <div className="ll-quick-card__sub">scheduled</div>
+                    </div>
+
+                    <div className="ll-quick-card">
+                        <div className="ll-quick-card__label">Upcoming holidays</div>
+                        <div className="ll-quick-card__value">{holidays?.length || 0}</div>
+                        <div className="ll-quick-card__sub">ahead</div>
+                    </div>
                 </div>
 
-                {/* Exam Results */}
-                <div className="card modern-card">
-                    <div className="card-header-modern">
-                        <h2>📊 Exam Results</h2>
+                {/* Student info */}
+                <div className="ll-portal__section">
+                    <h2 className="ll-portal__section-title">Student Information</h2>
+                    <div className="ll-info-grid">
+                        {[
+                            ['Class',        student?.class],
+                            ['Parent',       student?.parentName],
+                            ['Parent Phone', student?.parentPhone],
+                            student?.parentEmail ? ['Parent Email', student.parentEmail] : null,
+                        ].filter(Boolean).map(([label, val]) => (
+                            <div key={label} className="ll-info-item">
+                                <div className="ll-info-item__label">{label}</div>
+                                <div className="ll-info-item__value">{val}</div>
+                            </div>
+                        ))}
                     </div>
+                </div>
+
+                {/* Exam results */}
+                <div className="ll-portal__section">
+                    <h2 className="ll-portal__section-title">Exam Results</h2>
                     {exams?.results?.length > 0 ? (
-                        <div className="exam-results-grid">
-                            {exams.results.map((result, index) => (
-                                <div key={index} className="exam-result-card">
-                                    <div className="exam-result-header">
-                                        <h3>{result.examId}</h3>
-                                        <span className={`grade-badge grade-${result.grade}`}>{result.grade}</span>
+                        <div className="ll-results-grid">
+                            {exams.results.map((result, i) => (
+                                <div key={i} className="ll-result-card">
+                                    <div className="ll-result-card__top">
+                                        <span className="ll-result-card__name">{result.examId}</span>
+                                        <span className={`ll-result-card__grade grade-${result.grade}`}>{result.grade}</span>
                                     </div>
-                                    <div className="exam-result-details">
-                                        <div className="result-detail">
-                                            <span className="detail-label">Marks Obtained</span>
-                                            <span className="detail-value">{result.marksObtained}/{result.totalMarks}</span>
-                                        </div>
-                                        <div className="result-detail">
-                                            <span className="detail-label">Percentage</span>
-                                            <span className="detail-value percentage">{result.percentage}%</span>
-                                        </div>
+                                    <div className="ll-result-card__row">
+                                        <span>Marks</span>
+                                        <strong>{result.marksObtained}/{result.totalMarks}</strong>
+                                    </div>
+                                    <div className="ll-result-card__row">
+                                        <span>Percentage</span>
+                                        <strong className="ll-result-card__pct">{result.percentage}%</strong>
+                                    </div>
+                                    <div className="ll-result-card__bar">
+                                        <div style={{ width: `${result.percentage}%` }} />
                                     </div>
                                 </div>
                             ))}
                         </div>
                     ) : (
-                        <div className="empty-state">
-                            <span className="empty-icon">📝</span>
-                            <p>No exam results available yet.</p>
-                        </div>
+                        <div className="ll-empty">No exam results available yet.</div>
                     )}
                 </div>
 
-                {/* Upcoming Exams */}
-                <div className="card modern-card">
-                    <div className="card-header-modern">
-                        <h2>📅 Upcoming Exams</h2>
-                    </div>
+                {/* Upcoming exams */}
+                <div className="ll-portal__section">
+                    <h2 className="ll-portal__section-title">Upcoming Exams</h2>
                     {exams?.upcoming?.length > 0 ? (
-                        <div className="upcoming-exams-list">
-                            {exams.upcoming.map((exam, index) => {
-                                // Parse date without timezone conversion
-                                const [year, month, day] = exam.examDate.split('-').map(Number);
-                                const examDate = new Date(year, month - 1, day);
-
+                        <div className="ll-exam-list">
+                            {exams.upcoming.map((exam, i) => {
+                                const [y, m, d] = exam.examDate.split('-').map(Number);
+                                const date = new Date(y, m - 1, d);
                                 return (
-                                    <div key={index} className="upcoming-exam-item">
-                                        <div className="exam-icon">📚</div>
-                                        <div className="exam-info">
-                                            <h3>{exam.examName}</h3>
-                                            <p className="exam-subject">{exam.subject}</p>
-                                        </div>
-                                        <div className="exam-meta">
-                                            <span className="exam-date">
-                                                📆 {examDate.toLocaleDateString('en-US', {
-                                                    month: 'short',
-                                                    day: 'numeric',
-                                                    year: 'numeric'
-                                                })}
+                                    <div key={i} className="ll-exam-item">
+                                        <div className="ll-exam-item__date">
+                                            <span className="ll-exam-item__day">{d}</span>
+                                            <span className="ll-exam-item__mon">
+                                                {date.toLocaleString('en-US', { month: 'short' })}
                                             </span>
-                                            <span className="exam-marks">Total Marks: {exam.totalMarks}</span>
+                                        </div>
+                                        <div className="ll-exam-item__info">
+                                            <div className="ll-exam-item__name">{exam.examName}</div>
+                                            <div className="ll-exam-item__sub">{exam.subject}</div>
+                                        </div>
+                                        <div className="ll-exam-item__meta">
+                                            Total: {exam.totalMarks} marks
                                         </div>
                                     </div>
                                 );
                             })}
                         </div>
                     ) : (
-                        <div className="empty-state">
-                            <span className="empty-icon">📚</span>
-                            <p>No upcoming exams.</p>
-                        </div>
+                        <div className="ll-empty">No upcoming exams.</div>
                     )}
                 </div>
 
                 {/* Holidays */}
-                <div className="card modern-card">
-                    <div className="card-header-modern">
-                        <h2>🎉 Upcoming Holidays</h2>
-                    </div>
+                <div className="ll-portal__section">
+                    <h2 className="ll-portal__section-title">Upcoming Holidays</h2>
                     {holidays?.length > 0 ? (
-                        <div className="holidays-modern-list">
-                            {holidays.slice(0, 5).map((holiday, index) => {
-                                // Parse date without timezone conversion
-                                const [year, month, day] = holiday.holidayDate.split('-').map(Number);
-                                const holidayDate = new Date(year, month - 1, day);
-
+                        <div className="ll-exam-list">
+                            {holidays.slice(0, 5).map((h, i) => {
+                                const [y, m, d] = h.holidayDate.split('-').map(Number);
+                                const date = new Date(y, m - 1, d);
                                 return (
-                                    <div key={index} className="holiday-modern-item">
-                                        <div className="holiday-icon">🎊</div>
-                                        <div className="holiday-info">
-                                            <h3>{holiday.holidayName}</h3>
-                                            <span className="holiday-date">
-                                                {holidayDate.toLocaleDateString('en-US', {
-                                                    weekday: 'long',
-                                                    month: 'long',
-                                                    day: 'numeric',
-                                                    year: 'numeric'
-                                                })}
+                                    <div key={i} className="ll-exam-item">
+                                        <div className="ll-exam-item__date">
+                                            <span className="ll-exam-item__day">{d}</span>
+                                            <span className="ll-exam-item__mon">
+                                                {date.toLocaleString('en-US', { month: 'short' })}
                                             </span>
+                                        </div>
+                                        <div className="ll-exam-item__info">
+                                            <div className="ll-exam-item__name">{h.holidayName}</div>
+                                            <div className="ll-exam-item__sub">
+                                                {date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                                            </div>
                                         </div>
                                     </div>
                                 );
                             })}
                         </div>
                     ) : (
-                        <div className="empty-state">
-                            <span className="empty-icon">🎉</span>
-                            <p>No upcoming holidays.</p>
-                        </div>
+                        <div className="ll-empty">No upcoming holidays.</div>
                     )}
                 </div>
+
             </div>
         </div>
     );

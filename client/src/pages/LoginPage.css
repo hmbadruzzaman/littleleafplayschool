@@ -1,66 +1,245 @@
-.login-page {
+/* =====================================================
+   Login Page — Little Leaf redesign
+   ===================================================== */
+
+.ll-login {
     min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+
+/* ── Left panel ───────────────────────────────────── */
+.ll-login__panel {
+    background: var(--forest-900);
+    color: var(--cream-100);
+    padding: 48px 56px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+}
+
+.ll-login__panel-blob {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.ll-login__panel-blob--1 {
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(95, 116, 80, 0.4), transparent 70%);
+    top: -160px;
+    right: -200px;
+}
+
+.ll-login__panel-blob--2 {
+    width: 350px;
+    height: 350px;
+    background: radial-gradient(circle, rgba(201, 123, 91, 0.2), transparent 70%);
+    bottom: -80px;
+    left: -80px;
+}
+
+.ll-login__back {
+    position: relative;
+    background: none;
+    border: none;
+    color: var(--forest-300);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 0;
+    text-align: left;
+    transition: color 0.15s;
+    font-family: inherit;
+    align-self: flex-start;
+}
+
+.ll-login__back:hover {
+    color: var(--cream-100);
+}
+
+.ll-login__panel-center {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 48px 0;
+}
+
+.ll-login__logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 40px;
+}
+
+.ll-login__logo-icon {
+    width: 48px;
+    height: 48px;
+    background: rgba(255,255,255,0.08);
+    color: var(--forest-300);
+    border-radius: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
-    padding: 20px;
 }
 
-.login-container {
-    background: white;
-    border-radius: 10px;
-    padding: 40px;
-    max-width: 450px;
-    width: 100%;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+.ll-login__logo span {
+    font-family: var(--font-display);
+    font-size: 24px;
+    color: var(--cream-50);
 }
 
-.login-header {
-    text-align: center;
-    margin-bottom: 30px;
+.ll-login__welcome {
+    font-family: var(--font-display);
+    font-size: clamp(48px, 5vw, 72px);
+    line-height: 1.02;
+    color: var(--cream-50);
+    margin-bottom: 24px;
 }
 
-.login-header h1 {
-    color: var(--primary-color);
-    margin-bottom: 10px;
+.ll-login__welcome em {
+    color: var(--forest-300);
+    font-style: italic;
 }
 
-.login-header p {
-    color: var(--text-light);
-}
-
-.login-form .form-group {
-    margin-bottom: 20px;
-}
-
-.btn-full {
-    width: 100%;
-    padding: 12px;
+.ll-login__tagline {
     font-size: 16px;
-    margin-top: 10px;
+    color: var(--forest-300);
+    line-height: 1.6;
+    max-width: 400px;
 }
 
-.login-footer {
-    text-align: center;
-    margin-top: 20px;
+.ll-login__stats {
+    position: relative;
+    display: flex;
+    gap: 48px;
 }
 
-.btn-link {
-    background: none;
-    border: none;
-    color: var(--primary-color);
-    cursor: pointer;
+.ll-login__stat-n {
+    font-family: var(--font-display);
+    font-size: 40px;
+    color: var(--forest-300);
+    line-height: 1;
+}
+
+.ll-login__stat-l {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--forest-600);
+    margin-top: 6px;
+}
+
+/* ── Right panel / form ───────────────────────────── */
+.ll-login__form-wrap {
+    display: grid;
+    place-items: center;
+    padding: 48px 40px;
+    background: var(--cream-50);
+}
+
+.ll-login__form-box {
+    width: 100%;
+    max-width: 420px;
+}
+
+.ll-login__form-title {
+    font-family: var(--font-display);
+    font-size: 42px;
+    color: var(--forest-900);
+    margin-top: 12px;
+    margin-bottom: 8px;
+}
+
+.ll-login__form-sub {
     font-size: 14px;
-    text-decoration: underline;
+    color: var(--text-light);
+    margin-bottom: 32px;
 }
 
-.btn-link:hover {
-    color: var(--accent-color);
+/* Role switcher */
+.ll-login__role-switch {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    background: var(--cream-100);
+    padding: 4px;
+    border-radius: var(--radius-pill);
+    margin-bottom: 28px;
 }
 
+.ll-login__role-btn {
+    padding: 10px 8px;
+    border: none;
+    border-radius: var(--radius-pill);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.18s var(--ease);
+    font-family: inherit;
+}
+
+.ll-login__role-btn--active {
+    background: var(--surface);
+    color: var(--forest-900);
+    box-shadow: var(--shadow-sm);
+}
+
+.ll-login__pw-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.ll-login__pw-label label {
+    font-weight: 500;
+    font-size: 13px;
+    color: var(--text);
+}
+
+.ll-login__pw-label a {
+    font-size: 12px;
+    color: var(--moss);
+}
+
+.ll-login__form {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.ll-login__form .form-group { margin-bottom: 16px; }
+
+.ll-login__submit {
+    margin-top: 8px;
+}
+
+.ll-login__back-link {
+    margin-top: 24px;
+    text-align: center;
+}
+
+/* ── Responsive ───────────────────────────────────── */
 @media (max-width: 768px) {
-    .login-container {
-        padding: 30px 20px;
+    .ll-login {
+        grid-template-columns: 1fr;
     }
+    .ll-login__panel {
+        padding: 40px 28px;
+        min-height: 280px;
+    }
+    .ll-login__panel-center {
+        padding: 28px 0;
+    }
+    .ll-login__welcome { font-size: 44px; }
+    .ll-login__stats { gap: 32px; }
+    .ll-login__form-wrap { padding: 40px 24px; }
 }

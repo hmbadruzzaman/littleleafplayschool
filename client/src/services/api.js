@@ -111,7 +111,7 @@ export const adminAPI = {
 
     // Inquiries
     getAllInquiries: () => api.get('/admin/inquiries'),
-    updateInquiryStatus: (inquiryId, status) => api.put(`/admin/inquiries/${encodeURIComponent(inquiryId)}/status`, { status })
+    updateInquiryStatus: (inquiryId, status, comment) => api.put(`/admin/inquiries/${encodeURIComponent(inquiryId)}/status`, { status, comment })
 };
 
 export default api;

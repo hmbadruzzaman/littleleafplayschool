@@ -4,14 +4,14 @@ import AddStudentForm from '../../components/forms/AddStudentForm';
 import StudentDetailsModal from '../../components/modals/StudentDetailsModal';
 
 function StudentsSection() {
-    const [students, setStudents] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [showAddStudent, setShowAddStudent] = useState(false);
-    const [selectedStudent, setSelectedStudent] = useState(null);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [showInactive, setShowInactive] = useState(false);
-    const [sortField, setSortField] = useState('rollNumber');
-    const [sortDir, setSortDir] = useState('asc');
+    const [students, setStudents]         = useState([]);
+    const [loading, setLoading]           = useState(true);
+    const [showAddStudent, setShowAdd]    = useState(false);
+    const [selectedStudent, setSelected] = useState(null);
+    const [searchTerm, setSearchTerm]    = useState('');
+    const [showInactive, setShowInactive]= useState(false);
+    const [sortField, setSortField]      = useState('rollNumber');
+    const [sortDir, setSortDir]          = useState('asc');
 
     useEffect(() => { fetchStudents(); }, []);
 
@@ -19,74 +19,68 @@ function StudentsSection() {
         try {
             const res = await adminAPI.getAllStudents();
             setStudents(res.data.data);
-        } catch (error) {
-            console.error('Error fetching students:', error);
+        } catch (err) {
+            console.error('Error fetching students:', err);
         } finally {
             setLoading(false);
         }
     };
 
-    const handleSort = (field) => {
+    const handleSort = field => {
         if (sortField === field) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
         else { setSortField(field); setSortDir('asc'); }
     };
 
-    const getDisplayStudents = () => {
-        const statusFilter = showInactive ? 'INACTIVE' : 'ACTIVE';
-        return students
-            .filter(s => s.status === statusFilter)
-            .filter(s => {
-                const q = searchTerm.toLowerCase();
-                return s.fullName.toLowerCase().includes(q)
-                    || s.rollNumber.toLowerCase().includes(q)
-                    || (s.parentName && s.parentName.toLowerCase().includes(q));
-            })
-            .sort((a, b) => {
-                const av = (a[sortField] || '').toString().toLowerCase();
-                const bv = (b[sortField] || '').toString().toLowerCase();
-                if (av < bv) return sortDir === 'asc' ? -1 : 1;
-                if (av > bv) return sortDir === 'asc' ? 1 : -1;
-                return 0;
-            });
-    };
+    const displayed = students
+        .filter(s => s.status === (showInactive ? 'INACTIVE' : 'ACTIVE'))
+        .filter(s => {
+            const q = searchTerm.toLowerCase();
+            return s.fullName.toLowerCase().includes(q)
+                || s.rollNumber.toLowerCase().includes(q)
+                || (s.parentName && s.parentName.toLowerCase().includes(q));
+        })
+        .sort((a, b) => {
+            const av = (a[sortField] || '').toString().toLowerCase();
+            const bv = (b[sortField] || '').toString().toLowerCase();
+            if (av < bv) return sortDir === 'asc' ? -1 : 1;
+            if (av > bv) return sortDir === 'asc' ?  1 : -1;
+            return 0;
+        });
 
     const SortTh = ({ field, children }) => (
-        <th onClick={() => handleSort(field)} style={{ cursor: 'pointer', userSelect: 'none' }}>
+        <th onClick={() => handleSort(field)} style={{ cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
             {children} {sortField === field ? (sortDir === 'asc' ? '↑' : '↓') : ''}
         </th>
     );
 
-    if (loading) return <div className="loading">Loading students...</div>;
-
-    const displayed = getDisplayStudents();
+    if (loading) return <div className="loading">Loading students…</div>;
 
     return (
-        <div className="card">
-            <div className="card-header">
+        <div className="ll-card">
+            <div className="ll-card__head">
                 <h2>{showInactive ? 'Inactive Students' : 'Active Students'}</h2>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <button
-                        className="btn btn-secondary"
-                        onClick={() => setShowInactive(v => !v)}
-                        style={{ fontSize: '0.875rem' }}
-                    >
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <button className="btn btn-secondary" style={{ fontSize: 13 }}
+                        onClick={() => setShowInactive(v => !v)}>
                         {showInactive ? 'Show Active' : 'Show Inactive'}
                     </button>
                     {!showInactive && (
-                        <button className="btn btn-primary" onClick={() => setShowAddStudent(true)}>
-                            Add Student
+                        <button className="btn btn-primary" style={{ fontSize: 13 }}
+                            onClick={() => setShowAdd(true)}>
+                            + Add Student
                         </button>
                     )}
                 </div>
             </div>
 
-            <div style={{ padding: '16px 24px', borderBottom: '1px solid #e5e7eb' }}>
+            {/* Search bar */}
+            <div style={{ padding: '14px 24px', borderBottom: '1px solid var(--border-soft)' }}>
                 <input
                     type="text"
-                    placeholder="Search by name, roll number, or parent name..."
+                    placeholder="Search by name, roll number, or parent…"
                     value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
-                    style={{ width: '100%', padding: '10px 16px', fontSize: '0.95rem', border: '1px solid #d1d5db', borderRadius: '6px', outline: 'none' }}
+                    style={{ width: '100%', padding: '10px 16px', fontSize: 14, border: '1px solid var(--border-color)', borderRadius: 8, background: 'var(--surface)', color: 'var(--text)', outline: 'none' }}
                 />
             </div>
 
@@ -106,25 +100,19 @@ function StudentsSection() {
                         {displayed.map(student => (
                             <tr
                                 key={student.studentId}
-                                onClick={() => setSelectedStudent(student)}
-                                style={{ cursor: 'pointer', opacity: student.status === 'INACTIVE' ? 0.6 : 1 }}
+                                onClick={() => setSelected(student)}
                                 className="clickable-row"
+                                style={{ opacity: student.status === 'INACTIVE' ? 0.6 : 1 }}
                             >
-                                <td>{student.rollNumber}</td>
+                                <td style={{ fontFamily: 'var(--font-body)', fontWeight: 500 }}>{student.rollNumber}</td>
                                 <td style={{
                                     textDecoration: student.status === 'INACTIVE' ? 'line-through' : 'none',
-                                    color: student.status === 'INACTIVE' ? '#94a3b8' : 'inherit'
-                                }}>
-                                    {student.fullName}
-                                </td>
+                                    color: student.status === 'INACTIVE' ? 'var(--text-muted)' : 'inherit'
+                                }}>{student.fullName}</td>
                                 <td>{student.class}</td>
                                 <td>{student.parentName}</td>
                                 <td>{student.parentPhone}</td>
-                                <td>
-                                    <span className={`status-badge ${student.status.toLowerCase()}`}>
-                                        {student.status}
-                                    </span>
-                                </td>
+                                <td><span className={`status-badge ${student.status.toLowerCase()}`}>{student.status}</span></td>
                             </tr>
                         ))}
                     </tbody>
@@ -132,25 +120,24 @@ function StudentsSection() {
             </div>
 
             {displayed.length === 0 && (
-                <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>
+                <div style={{ padding: '48px', textAlign: 'center', color: 'var(--text-muted)', fontFamily: 'var(--font-display)', fontSize: 20 }}>
                     {searchTerm
                         ? `No ${showInactive ? 'inactive' : 'active'} students matching "${searchTerm}"`
-                        : `No ${showInactive ? 'inactive' : 'active'} students`}
+                        : `No ${showInactive ? 'inactive' : 'active'} students found.`}
                 </div>
             )}
 
             {showAddStudent && (
                 <AddStudentForm
-                    onClose={() => setShowAddStudent(false)}
-                    onSuccess={() => { setShowAddStudent(false); fetchStudents(); }}
+                    onClose={() => setShowAdd(false)}
+                    onSuccess={() => { setShowAdd(false); fetchStudents(); }}
                 />
             )}
-
             {selectedStudent && (
                 <StudentDetailsModal
                     student={selectedStudent}
-                    onClose={() => setSelectedStudent(null)}
-                    onUpdate={() => { fetchStudents(); setSelectedStudent(null); }}
+                    onClose={() => setSelected(null)}
+                    onUpdate={() => { fetchStudents(); setSelected(null); }}
                 />
             )}
         </div>
