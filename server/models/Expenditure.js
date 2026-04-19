@@ -74,6 +74,7 @@ class ExpenditureModel {
             maintenanceExpenses: 0,
             miscExpenses: 0,
             transactionCount: result.Items.length,
+            byMonth: {},
             expenditures: result.Items
         };
 
@@ -100,6 +101,11 @@ class ExpenditureModel {
                 case 'MISC':
                     report.miscExpenses += amount;
                     break;
+            }
+
+            if (exp.date) {
+                const monthKey = exp.date.substring(0, 7); // YYYY-MM
+                report.byMonth[monthKey] = (report.byMonth[monthKey] || 0) + amount;
             }
         });
 

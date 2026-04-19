@@ -19,25 +19,64 @@ function Icon({ name, size = 18, color = 'currentColor' }) {
     return <svg viewBox="0 0 24 24" style={s}>{paths[name]}</svg>;
 }
 
-function Sparkline({ data, color, height = 60 }) {
-    if (!data || data.length < 2) return null;
-    const max = Math.max(...data); const min = Math.min(...data); const range = max - min || 1;
+function DualSparkline({ series, height = 70 }) {
     const w = 200, h = height;
-    const pts = data.map((v, i) => `${(i / (data.length - 1)) * w},${h - ((v - min) / range) * h * 0.82 - h * 0.05}`).join(' ');
-    const area = `${pts} ${w},${h} 0,${h}`;
-    const id = `sg${color.replace(/[^a-z0-9]/gi, '')}`;
+    const allVals = series.flatMap(s => s.data);
+    if (allVals.length === 0) return null;
+    const max = Math.max(...allVals, 1);
+
+    const toPoints = data => data.map((v, i) => {
+        const x = data.length === 1 ? w / 2 : (i / (data.length - 1)) * w;
+        const y = h - (v / max) * h * 0.82 - h * 0.08;
+        return [x, y];
+    });
+
     return (
         <svg viewBox={`0 0 ${w} ${h}`} style={{ width: '100%', height, display: 'block' }} preserveAspectRatio="none">
             <defs>
-                <linearGradient id={id} x1="0" x2="0" y1="0" y2="1">
-                    <stop offset="0%" stopColor={color} stopOpacity="0.22" />
-                    <stop offset="100%" stopColor={color} stopOpacity="0" />
-                </linearGradient>
+                {series.map(s => (
+                    <linearGradient key={s.id} id={s.id} x1="0" x2="0" y1="0" y2="1">
+                        <stop offset="0%" stopColor={s.color} stopOpacity="0.22" />
+                        <stop offset="100%" stopColor={s.color} stopOpacity="0" />
+                    </linearGradient>
+                ))}
             </defs>
-            <polygon points={area} fill={`url(#${id})`} />
-            <polyline points={pts} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+            {series.map(s => {
+                const pts = toPoints(s.data);
+                if (pts.length === 0) return null;
+                const ptStr = pts.map(p => p.join(',')).join(' ');
+                const area = `${ptStr} ${w},${h} 0,${h}`;
+                return (
+                    <g key={s.id}>
+                        <polygon points={area} fill={`url(#${s.id})`} />
+                        <polyline points={ptStr} fill="none" stroke={s.color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+                        {pts.length === 1 && <circle cx={pts[0][0]} cy={pts[0][1]} r="3" fill={s.color} />}
+                    </g>
+                );
+            })}
         </svg>
     );
+}
+
+function buildMonthlySeries(byEarnings, byExpenditure, startDate, endDate) {
+    // Build chronological list of YYYY-MM keys from startDate..endDate
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const keys = [];
+    const cursor = new Date(start.getFullYear(), start.getMonth(), 1);
+    while (cursor <= end) {
+        const y = cursor.getFullYear();
+        const m = String(cursor.getMonth() + 1).padStart(2, '0');
+        keys.push(`${y}-${m}`);
+        cursor.setMonth(cursor.getMonth() + 1);
+    }
+    const earnings    = keys.map(k => Number(byEarnings?.[k])    || 0);
+    const expenditure = keys.map(k => Number(byExpenditure?.[k]) || 0);
+    const labels = keys.map(k => {
+        const [, mm] = k.split('-');
+        return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][Number(mm) - 1];
+    });
+    return { earnings, expenditure, labels };
 }
 
 const CLASS_ORDER = ['Play', 'Nursery', 'LKG', 'UKG'];
@@ -173,13 +212,47 @@ function DashboardSection({ onNavigate, onPendingInquiriesCount }) {
                     </div>
 
                     <div style={{ padding: '4px 24px 20px' }}>
-                        <Sparkline
-                            data={[earnings*0.3, earnings*0.45, earnings*0.42, earnings*0.6, earnings*0.55, earnings*0.78, earnings]}
-                            color="#4a5d3f" height={60}
-                        />
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontSize: 10, color: 'var(--text-muted)', fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                            {['Jan','Feb','Mar','Apr','May','Jun','Now'].map(m => <span key={m}>{m}</span>)}
-                        </div>
+                        {(() => {
+                            const { startDate, endDate } = getDateRange();
+                            const { earnings: eSeries, expenditure: xSeries, labels } =
+                                buildMonthlySeries(reports?.earnings?.byMonth, reports?.expenditure?.byMonth, startDate, endDate);
+                            const hasData = eSeries.some(v => v > 0) || xSeries.some(v => v > 0);
+
+                            if (!hasData) {
+                                return (
+                                    <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
+                                        No transactions recorded for this period yet.
+                                    </div>
+                                );
+                            }
+
+                            return (
+                                <>
+                                    <DualSparkline
+                                        series={[
+                                            { id: 'sgEarn', data: eSeries, color: 'var(--success-color)' },
+                                            { id: 'sgExp',  data: xSeries, color: 'var(--error-color)'   },
+                                        ]}
+                                        height={70}
+                                    />
+                                    {labels.length > 1 && (
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontSize: 10, color: 'var(--text-muted)', fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                                            {labels.map((m, i) => <span key={i}>{m}</span>)}
+                                        </div>
+                                    )}
+                                    <div style={{ display: 'flex', gap: 18, marginTop: 12, fontSize: 12, color: 'var(--text-light)', flexWrap: 'wrap' }}>
+                                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                                            <span style={{ width: 10, height: 2, background: 'var(--success-color)' }} />
+                                            Earnings
+                                        </span>
+                                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                                            <span style={{ width: 10, height: 2, background: 'var(--error-color)' }} />
+                                            Expenditure
+                                        </span>
+                                    </div>
+                                </>
+                            );
+                        })()}
                     </div>
                 </div>
 

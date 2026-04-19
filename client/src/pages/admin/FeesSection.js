@@ -46,7 +46,17 @@ function FeesSection() {
             setMonthEarnings(monthRes.data.data?.totalEarnings || 0);
             setTxCount(monthRes.data.data?.transactionCount || 0);
             setYearEarnings(yearRes.data.data?.totalEarnings || 0);
-            setEarningsByType(yearRes.data.data?.byType || {});
+
+            const y = yearRes.data.data || {};
+            const byType = Object.fromEntries([
+                ['Monthly Fee',   y.monthlyFees],
+                ['Admission Fee', y.admissionFees],
+                ['Transport Fee', y.transportFees],
+                ['Annual Fee',    y.annualFees],
+                ['Exam Fee',      y.examFees],
+                ['Miscellaneous', y.miscFees],
+            ].filter(([, v]) => Number(v) > 0));
+            setEarningsByType(byType);
 
             if (pendingRes.success) setPendingData(pendingRes.data);
         } catch (err) {
