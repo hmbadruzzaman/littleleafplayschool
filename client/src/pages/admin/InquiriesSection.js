@@ -16,7 +16,7 @@ function InquiriesSection({ onPendingCountChange }) {
     const [inquiries, setInquiries]       = useState([]);
     const [selected, setSelected]         = useState(null);
     const [loading, setLoading]           = useState(true);
-    const [filterStatus, setFilterStatus] = useState('ALL');
+    const [filterStatus, setFilterStatus] = useState('PENDING');
     const [updating, setUpdating]         = useState(false);
     const [showAddInquiry, setShowAdd]    = useState(false);
     const [closeFor, setCloseFor]         = useState(null); // inquiry being closed
@@ -72,7 +72,9 @@ function InquiriesSection({ onPendingCountChange }) {
 
     const displayed = filterStatus === 'ALL'
         ? inquiries
-        : inquiries.filter(i => i.status === filterStatus);
+        : filterStatus === 'PENDING'
+            ? inquiries.filter(i => PENDING_STATUSES.includes(i.status))
+            : inquiries.filter(i => i.status === filterStatus);
 
     const pendingCount = inquiries.filter(i => PENDING_STATUSES.includes(i.status)).length;
 
@@ -121,7 +123,7 @@ function InquiriesSection({ onPendingCountChange }) {
                     </div>
                     {/* Status filter tabs */}
                     <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                        {['ALL', 'NEW', 'IN_PROGRESS', 'FOLLOWED_UP', 'ADMITTED', 'REJECTED'].map(s => (
+                        {['PENDING', 'ALL', 'NEW', 'IN_PROGRESS', 'FOLLOWED_UP', 'ADMITTED', 'REJECTED'].map(s => (
                             <button key={s} onClick={() => setFilterStatus(s)} style={{
                                 padding: '5px 12px', borderRadius: 999, fontSize: 11, fontWeight: 600,
                                 border: '1px solid ' + (filterStatus === s ? 'var(--forest-300)' : 'var(--border-soft)'),
@@ -130,7 +132,7 @@ function InquiriesSection({ onPendingCountChange }) {
                                 cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '0.04em', textTransform: 'uppercase',
                                 transition: 'all 0.15s',
                             }}>
-                                {s === 'ALL' ? 'All' : (STATUS_META[s]?.label || s)}
+                                {s === 'ALL' ? 'All' : s === 'PENDING' ? 'Pending' : (STATUS_META[s]?.label || s)}
                             </button>
                         ))}
                     </div>

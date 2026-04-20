@@ -36,8 +36,27 @@ exports.getDashboard = async (req, res) => {
         const totalPending = pendingData.totalPending;
         const pendingBreakdown = pendingData.breakdown;
 
-        // Get exam results
-        const examResults = await ExamResultModel.getByStudentId(student.studentId);
+        // Get exam results, enriched with exam name/subject
+        const rawResults = await ExamResultModel.getByStudentId(student.studentId);
+        const examResults = await Promise.all(rawResults.map(async (r) => {
+            try {
+                const exam = await ExamModel.findById(r.examId);
+                return {
+                    ...r,
+                    examName: exam?.examName || null,
+                    subject: exam?.subject || null,
+                    examDate: exam?.examDate || null
+                };
+            } catch (e) {
+                return r;
+            }
+        }));
+        // Most recent first
+        examResults.sort((a, b) => {
+            const ad = a.examDate || a.createdAt || '';
+            const bd = b.examDate || b.createdAt || '';
+            return bd.localeCompare(ad);
+        });
 
         // Get upcoming exams
         const upcomingExams = await ExamModel.getUpcoming(student.class);
