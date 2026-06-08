@@ -3,6 +3,7 @@ const StudentModel = require('../models/Student');
 const TeacherModel = require('../models/Teacher');
 const FeeModel = require('../models/Fee');
 const ExamModel = require('../models/Exam');
+const ExamResultModel = require('../models/ExamResult');
 const ExpenditureModel = require('../models/Expenditure');
 const { docClient, TABLES } = require('../config/dynamodb');
 const { v4: uuidv4 } = require('uuid');
@@ -466,22 +467,97 @@ exports.createExam = async (req, res) => {
     }
 };
 
-// Get all exams (with optional class filter)
+// Get all exams (with optional class filter). Each exam is annotated with
+// `hasResults` so the admin UI can lock subject edits and disable delete
+// once any student has marks recorded.
 exports.getAllExams = async (req, res) => {
     try {
         const { class: className } = req.query;
 
-        let exams;
-        if (className) {
-            exams = await ExamModel.getByClass(className);
-        } else {
-            exams = await ExamModel.getAll();
-        }
+        const exams = className
+            ? await ExamModel.getByClass(className)
+            : await ExamModel.getAll();
 
-        res.status(200).json(successResponse(exams, 'Exams retrieved successfully'));
+        // One scan of EXAM_RESULTS projecting just examId, build a Set,
+        // attach hasResults to each exam. Cheaper than N queries to the GSI.
+        const resultsScan = await docClient.scan({
+            TableName: TABLES.EXAM_RESULTS,
+            ProjectionExpression: 'examId'
+        }).promise();
+        const examIdsWithResults = new Set((resultsScan.Items || []).map(r => r.examId));
+
+        const enriched = (exams || []).map(e => ({
+            ...e,
+            hasResults: examIdsWithResults.has(e.examId)
+        }));
+
+        res.status(200).json(successResponse(enriched, 'Exams retrieved successfully'));
     } catch (error) {
         console.error('Get exams error:', error);
         res.status(500).json(errorResponse('Failed to retrieve exams', error));
+    }
+};
+
+// Update an exam. Subjects and totalMarks are locked once any student
+// has marks recorded for this exam — the lock is enforced here, not just
+// in the UI. Name/type/class/date remain editable.
+exports.updateExam = async (req, res) => {
+    try {
+        const { examId } = req.params;
+
+        const existing = await ExamModel.findById(examId);
+        if (!existing) {
+            return res.status(404).json(errorResponse('Exam not found'));
+        }
+
+        const allowed = ['examName', 'examType', 'class', 'examDate', 'subjects', 'totalMarks'];
+        const updates = {};
+        for (const k of allowed) {
+            if (req.body[k] !== undefined) updates[k] = req.body[k];
+        }
+
+        // Enforce the subject lock: if any results exist, strip subjects/totalMarks.
+        const results = await ExamResultModel.getByExamId(examId);
+        if (results && results.length > 0) {
+            delete updates.subjects;
+            delete updates.totalMarks;
+        }
+
+        if (Object.keys(updates).length === 0) {
+            return res.status(400).json(errorResponse('No editable fields supplied'));
+        }
+
+        const updated = await ExamModel.update(examId, updates);
+        const hasResults = results && results.length > 0;
+        res.status(200).json(successResponse({ ...updated, hasResults }, 'Exam updated successfully'));
+    } catch (error) {
+        console.error('Update exam error:', error);
+        res.status(500).json(errorResponse('Failed to update exam', error));
+    }
+};
+
+// Delete an exam. Blocked with 409 if any student has marks recorded for it.
+exports.deleteExam = async (req, res) => {
+    try {
+        const { examId } = req.params;
+
+        const existing = await ExamModel.findById(examId);
+        if (!existing) {
+            return res.status(404).json(errorResponse('Exam not found'));
+        }
+
+        const results = await ExamResultModel.getByExamId(examId);
+        if (results && results.length > 0) {
+            return res.status(409).json(errorResponse(
+                `Cannot delete: ${results.length} student${results.length === 1 ? ' has' : 's have'} marks recorded for this exam.`
+            ));
+        }
+
+        await ExamModel.delete(examId);
+        res.status(200).json(successResponse({ examId }, 'Exam deleted'));
+    } catch (error) {
+        console.error('Delete exam error:', error);
+        res.status(500).json(errorResponse('Failed to delete exam', error));
     }
 };
 
@@ -828,16 +904,22 @@ exports.updateInquiryStatus = async (req, res) => {
             });
         }
 
-        let updateExpression = 'SET #status = :status, followedUpAt = :followedUpAt, updatedAt = :updatedAt, followUpHistory = :followUpHistory';
+        let updateExpression = 'SET #status = :status, updatedAt = :updatedAt, followUpHistory = :followUpHistory';
         const expressionAttributeNames = { '#status': 'status' };
         const expressionAttributeValues = {
             ':status': status,
-            ':followedUpAt': (status === 'FOLLOWED_UP' || status === 'IN_PROGRESS')
-                ? new Date().toISOString()
-                : currentInquiry.Item.followedUpAt,
             ':updatedAt': new Date().toISOString(),
             ':followUpHistory': followUpHistory
         };
+
+        // Only touch followedUpAt when actively marking a follow-up; otherwise
+        // leave the existing value alone. DynamoDB rejects undefined in
+        // ExpressionAttributeValues, so we can't pass `currentInquiry.Item.followedUpAt`
+        // unconditionally — it's undefined for inquiries that were never followed up.
+        if (status === 'FOLLOWED_UP' || status === 'IN_PROGRESS') {
+            updateExpression += ', followedUpAt = :followedUpAt';
+            expressionAttributeValues[':followedUpAt'] = new Date().toISOString();
+        }
 
         if (status === 'ADMITTED' && !currentInquiry.Item.admissionDate) {
             updateExpression += ', admissionDate = :admissionDate';

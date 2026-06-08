@@ -5,6 +5,7 @@ import './Forms.css';
 const API_URL = 'https://welittleleaf.com/api';
 
 function InquiryForm({ onClose, onSuccess }) {
+    const today = new Date().toISOString().split('T')[0];
     const [formData, setFormData] = useState({
         parentName: '',
         email: '',
@@ -12,7 +13,8 @@ function InquiryForm({ onClose, onSuccess }) {
         studentName: '',
         studentAge: '',
         inquiry: '',
-        preferredClass: ''
+        preferredClass: '',
+        date: today
     });
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
@@ -38,7 +40,7 @@ function InquiryForm({ onClose, onSuccess }) {
                 setMessage({ type: 'success', text: 'Thank you! We will contact you soon.' });
                 if (onSuccess) onSuccess();
                 setTimeout(() => {
-                    setFormData({ parentName:'', email:'', phone:'', studentName:'', studentAge:'', inquiry:'', preferredClass:'' });
+                    setFormData({ parentName:'', email:'', phone:'', studentName:'', studentAge:'', inquiry:'', preferredClass:'', date: today });
                     setTimeout(onClose, 1000);
                 }, 1500);
             } else {
@@ -109,6 +111,15 @@ function InquiryForm({ onClose, onSuccess }) {
                                 <option value="UKG">UKG (Upper Kindergarten)</option>
                             </select>
                         </div>
+                    </div>
+
+                    <div className="form-row">
+                        <div className="form-group">
+                            <label>Inquiry Date *</label>
+                            <input type="date" name="date" value={formData.date}
+                                onChange={handleChange} required max={today} />
+                        </div>
+                        <div className="form-group" />
                     </div>
 
                     <div className="form-group">

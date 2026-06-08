@@ -25,12 +25,14 @@ const EARNINGS_CATEGORIES = [
 ];
 
 const EXPENDITURE_CATEGORIES = [
-    { key: 'salaryExpenses',         label: 'Salaries'       },
-    { key: 'infrastructureExpenses', label: 'Infrastructure' },
-    { key: 'utilitiesExpenses',      label: 'Utilities'      },
-    { key: 'suppliesExpenses',       label: 'Supplies'       },
-    { key: 'maintenanceExpenses',    label: 'Maintenance'    },
-    { key: 'miscExpenses',           label: 'Miscellaneous'  },
+    { key: 'salaryExpenses',          label: 'Salaries'           },
+    { key: 'cabDriverSalaryExpenses', label: "Cab Driver's Salary" },
+    { key: 'petrolExpenses',          label: 'Petrol'             },
+    { key: 'infrastructureExpenses',  label: 'Infrastructure'     },
+    { key: 'utilitiesExpenses',       label: 'Utilities'          },
+    { key: 'suppliesExpenses',        label: 'Supplies'           },
+    { key: 'maintenanceExpenses',     label: 'Maintenance'        },
+    { key: 'miscExpenses',            label: 'Miscellaneous'      },
 ];
 
 // Compact currency formatter for center-of-donut label
@@ -131,19 +133,19 @@ function getRange(key) {
 }
 
 function ReportsSection() {
-    const today = new Date();
-    const [startDate, setStartDate]       = useState(new Date(today.getFullYear(), 0, 1).toISOString().split('T')[0]);
-    const [endDate, setEndDate]           = useState(today.toISOString().split('T')[0]);
+    const DEFAULT_PRESET = 'this-month';
+    const initialRange = getRange(DEFAULT_PRESET);
+    const [startDate, setStartDate]       = useState(initialRange.start);
+    const [endDate, setEndDate]           = useState(initialRange.end);
     const [reportLoading, setLoading]     = useState(false);
     const [reports, setReports]           = useState(null);
     const [pendingFees, setPendingFees]   = useState(null);
     const [showPending, setShowPending]   = useState(false);
-    const [activePreset, setActivePreset] = useState('this-year');
+    const [activePreset, setActivePreset] = useState(DEFAULT_PRESET);
 
     // Auto-load on mount
     useEffect(() => {
-        const { start, end } = getRange('this-year');
-        fetchReports(start, end);
+        fetchReports(initialRange.start, initialRange.end);
     }, []);
 
     const fetchReports = async (s, e) => {

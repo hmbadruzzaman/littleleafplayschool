@@ -98,7 +98,7 @@ exports.submitContactForm = async (req, res) => {
 // Submit admission inquiry
 exports.submitInquiry = async (req, res) => {
     try {
-        const { parentName, email, phone, studentName, studentAge, inquiry, preferredClass } = req.body;
+        const { parentName, email, phone, studentName, studentAge, inquiry, preferredClass, date } = req.body;
 
         // Validation
         if (!parentName || !phone || !studentName || !studentAge || !inquiry) {
@@ -124,6 +124,14 @@ exports.submitInquiry = async (req, res) => {
             return res.status(400).json(errorResponse('Student age must be between 1 and 10 years'));
         }
 
+        // Accept an explicit inquiry date (YYYY-MM-DD) for backfilling phone/walk-in
+        // inquiries; otherwise stamp with current time.
+        let submittedAt = new Date().toISOString();
+        if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+            const parsed = new Date(`${date}T00:00:00.000Z`);
+            if (!isNaN(parsed.getTime())) submittedAt = parsed.toISOString();
+        }
+
         // Store inquiry data
         const inquiryData = {
             inquiryId: `INQ#${Date.now()}`,
@@ -135,7 +143,8 @@ exports.submitInquiry = async (req, res) => {
             inquiry,
             preferredClass: preferredClass || 'Not specified',
             status: 'NEW',
-            submittedAt: new Date().toISOString()
+            submittedAt,
+            createdAt: submittedAt
         };
 
         // Store in database

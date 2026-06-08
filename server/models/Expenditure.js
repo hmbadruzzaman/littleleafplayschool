@@ -68,6 +68,8 @@ class ExpenditureModel {
         const report = {
             totalExpenditure: 0,
             salaryExpenses: 0,
+            cabDriverSalaryExpenses: 0,
+            petrolExpenses: 0,
             infrastructureExpenses: 0,
             utilitiesExpenses: 0,
             suppliesExpenses: 0,
@@ -85,6 +87,12 @@ class ExpenditureModel {
             switch(exp.expenseType) {
                 case 'SALARY':
                     report.salaryExpenses += amount;
+                    break;
+                case 'CAB_DRIVER_SALARY':
+                    report.cabDriverSalaryExpenses += amount;
+                    break;
+                case 'PETROL':
+                    report.petrolExpenses += amount;
                     break;
                 case 'INFRASTRUCTURE':
                     report.infrastructureExpenses += amount;

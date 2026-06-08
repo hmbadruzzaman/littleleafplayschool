@@ -21,31 +21,40 @@ function Icon({ name, size = 18, color = 'currentColor' }) {
 
 function DualSparkline({ series, height = 70 }) {
     const w = 200, h = height;
-    const allVals = series.flatMap(s => s.data);
-    if (allVals.length === 0) return null;
-    const max = Math.max(...allVals, 1);
+    const active = series.filter(s => s.data.some(v => v > 0));
+    if (active.length === 0) return null;
 
-    const toPoints = data => data.map((v, i) => {
+    // Each active series gets its own vertical lane so a small-magnitude line
+    // (e.g. expenditure) still shows shape without overtaking a large-magnitude
+    // one (e.g. earnings). Order = input order, so earnings stays above expenditure.
+    const gap = active.length > 1 ? 4 : 0;
+    const laneH = (h - gap * (active.length - 1)) / active.length;
+
+    const toPoints = (data, max, top, bottom) => data.map((v, i) => {
         const x = data.length === 1 ? w / 2 : (i / (data.length - 1)) * w;
-        const y = h - (v / max) * h * 0.82 - h * 0.08;
+        const usable = bottom - top;
+        const y = bottom - (v / max) * usable * 0.85 - usable * 0.08;
         return [x, y];
     });
 
     return (
         <svg viewBox={`0 0 ${w} ${h}`} style={{ width: '100%', height, display: 'block' }} preserveAspectRatio="none">
             <defs>
-                {series.map(s => (
+                {active.map(s => (
                     <linearGradient key={s.id} id={s.id} x1="0" x2="0" y1="0" y2="1">
                         <stop offset="0%" stopColor={s.color} stopOpacity="0.22" />
                         <stop offset="100%" stopColor={s.color} stopOpacity="0" />
                     </linearGradient>
                 ))}
             </defs>
-            {series.map(s => {
-                const pts = toPoints(s.data);
+            {active.map((s, idx) => {
+                const top = idx * (laneH + gap);
+                const bottom = top + laneH;
+                const seriesMax = Math.max(...s.data, 1);
+                const pts = toPoints(s.data, seriesMax, top, bottom);
                 if (pts.length === 0) return null;
                 const ptStr = pts.map(p => p.join(',')).join(' ');
-                const area = `${ptStr} ${w},${h} 0,${h}`;
+                const area = `${ptStr} ${w},${bottom} 0,${bottom}`;
                 return (
                     <g key={s.id}>
                         <polygon points={area} fill={`url(#${s.id})`} />
