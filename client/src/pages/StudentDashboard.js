@@ -181,22 +181,33 @@ function StudentDashboard() {
                                         : pct >= 60 ? 'll-marks__bar--butter'
                                         : 'll-marks__bar--warm';
                                     return (
-                                        <div key={i} className="ll-marks__row">
-                                            <div className="ll-marks__label">
-                                                <div className="ll-marks__subject">
-                                                    {r.subject || r.examName || 'Exam'}
+                                        <div key={i} className="ll-marks__entry">
+                                            <div className="ll-marks__row">
+                                                <div className="ll-marks__label">
+                                                    <div className="ll-marks__subject">
+                                                        {r.subject || r.examName || 'Exam'}
+                                                    </div>
+                                                    {r.examName && r.subject && (
+                                                        <div className="ll-marks__topic">{r.examName}</div>
+                                                    )}
                                                 </div>
-                                                {r.examName && r.subject && (
-                                                    <div className="ll-marks__topic">{r.examName}</div>
-                                                )}
+                                                <div className="ll-marks__score">
+                                                    {r.marksObtained}<span className="ll-marks__score-total">/{r.totalMarks}</span>
+                                                </div>
+                                                <div className="ll-marks__bar-wrap">
+                                                    <div className={`ll-marks__bar ${toneClass}`} style={{ width: `${pct}%` }} />
+                                                </div>
+                                                <div className="ll-marks__pct">{pct}%</div>
                                             </div>
-                                            <div className="ll-marks__score">
-                                                {r.marksObtained}<span className="ll-marks__score-total">/{r.totalMarks}</span>
-                                            </div>
-                                            <div className="ll-marks__bar-wrap">
-                                                <div className={`ll-marks__bar ${toneClass}`} style={{ width: `${pct}%` }} />
-                                            </div>
-                                            <div className="ll-marks__pct">{pct}%</div>
+                                            {r.subjects && r.subjects.length > 0 && (
+                                                <div className="ll-marks__subjects">
+                                                    {r.subjects.map((s, si) => (
+                                                        <span key={si} className="ll-marks__subject-chip">
+                                                            {s.name} <strong>{s.marksObtained}/{s.maxMarks}</strong>
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
                                     );
                                 })}

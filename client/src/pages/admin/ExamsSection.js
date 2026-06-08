@@ -40,10 +40,13 @@ function ExamsSection() {
     };
 
     const handleDelete = async (exam) => {
-        if (exam.hasResults) return; // button should already be disabled
-        if (!window.confirm(`Delete "${exam.examName}" (${exam.class})? This cannot be undone.`)) return;
+        const count = exam.resultCount || 0;
+        const message = count > 0
+            ? `Delete "${exam.examName}" (${exam.class})?\n\nThis will also delete marks for ${count} student${count === 1 ? '' : 's'}. This cannot be undone.`
+            : `Delete "${exam.examName}" (${exam.class})? This cannot be undone.`;
+        if (!window.confirm(message)) return;
         try {
-            await adminAPI.deleteExam(exam.examId);
+            await adminAPI.deleteExam(exam.examId, { cascade: count > 0 });
             await fetchExams();
         } catch (err) {
             console.error('Delete exam error:', err);
@@ -137,15 +140,9 @@ function ExamsSection() {
                                     </button>
                                     <button
                                         onClick={() => handleDelete(exam)}
-                                        disabled={exam.hasResults}
-                                        title={exam.hasResults ? 'Cannot delete: marks have been recorded' : ''}
+                                        title={exam.hasResults ? `Will also delete marks for ${exam.resultCount} student${exam.resultCount === 1 ? '' : 's'}` : ''}
                                         className="btn btn-ghost"
-                                        style={{
-                                            fontSize: 12,
-                                            color: exam.hasResults ? 'var(--text-muted)' : '#b85b4a',
-                                            cursor: exam.hasResults ? 'not-allowed' : 'pointer',
-                                            opacity: exam.hasResults ? 0.5 : 1,
-                                        }}
+                                        style={{ fontSize: 12, color: '#b85b4a', cursor: 'pointer' }}
                                     >
                                         Delete
                                     </button>

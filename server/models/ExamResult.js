@@ -93,6 +93,25 @@ class ExamResultModel {
         const result = await docClient.update(params).promise();
         return result.Attributes;
     }
+
+    static async delete(resultId) {
+        await docClient.delete({
+            TableName: TABLES.EXAM_RESULTS,
+            Key: { resultId }
+        }).promise();
+        return true;
+    }
+
+    static async deleteByExamId(examId) {
+        const results = await ExamResultModel.getByExamId(examId);
+        for (const r of results) {
+            await docClient.delete({
+                TableName: TABLES.EXAM_RESULTS,
+                Key: { resultId: r.resultId }
+            }).promise();
+        }
+        return results.length;
+    }
 }
 
 module.exports = ExamResultModel;

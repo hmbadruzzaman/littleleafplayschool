@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import UploadMarksForm from '../forms/UploadMarksForm';
+import { adminAPI } from '../../services/api';
 import './Modals.css';
 
 function ViewExamResultsModal({ student, onClose }) {
@@ -55,6 +56,18 @@ function ViewExamResultsModal({ student, onClose }) {
         return marks.find(m => m.examId === examId);
     };
 
+    const handleDeleteMarks = async (exam, examMarks) => {
+        if (!examMarks?.resultId) return;
+        if (!window.confirm(`Delete ${student.fullName}'s marks for "${exam.examName}"? This cannot be undone.`)) return;
+        try {
+            await adminAPI.deleteExamResult(examMarks.resultId);
+            await fetchData();
+        } catch (err) {
+            console.error('Delete marks error:', err);
+            alert(err?.response?.data?.message || 'Failed to delete marks');
+        }
+    };
+
     return (
         <>
             <div className="modal-overlay" onClick={onClose}>
@@ -100,7 +113,7 @@ function ViewExamResultsModal({ student, onClose }) {
                                                                     {exam.examType} | {exam.examDate}
                                                                 </p>
                                                             </div>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                                                                 {examMarks ? (
                                                                     <span className="status-badge active">Submitted</span>
                                                                 ) : (
@@ -113,6 +126,15 @@ function ViewExamResultsModal({ student, onClose }) {
                                                                 >
                                                                     {examMarks ? 'Edit Marks' : 'Upload Marks'}
                                                                 </button>
+                                                                {examMarks && (
+                                                                    <button
+                                                                        onClick={() => handleDeleteMarks(exam, examMarks)}
+                                                                        className="btn btn-secondary"
+                                                                        style={{ fontSize: '0.8rem', padding: '4px 12px', color: '#b85b4a', borderColor: '#f0c8c0' }}
+                                                                    >
+                                                                        Delete Marks
+                                                                    </button>
+                                                                )}
                                                             </div>
                                                         </div>
 

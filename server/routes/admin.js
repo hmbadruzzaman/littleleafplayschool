@@ -33,6 +33,7 @@ router.post('/exams', adminController.createExam);
 router.get('/exams', adminController.getAllExams);
 router.put('/exams/:examId', adminController.updateExam);
 router.delete('/exams/:examId', adminController.deleteExam);
+router.delete('/exam-results/:resultId', adminController.deleteExamResult);
 
 // Holiday management
 router.post('/holidays', adminController.addHoliday);

@@ -478,18 +478,22 @@ exports.getAllExams = async (req, res) => {
             ? await ExamModel.getByClass(className)
             : await ExamModel.getAll();
 
-        // One scan of EXAM_RESULTS projecting just examId, build a Set,
-        // attach hasResults to each exam. Cheaper than N queries to the GSI.
+        // One scan of EXAM_RESULTS projecting just examId, build a count map,
+        // attach hasResults + resultCount to each exam. Cheaper than N queries
+        // to the GSI.
         const resultsScan = await docClient.scan({
             TableName: TABLES.EXAM_RESULTS,
             ProjectionExpression: 'examId'
         }).promise();
-        const examIdsWithResults = new Set((resultsScan.Items || []).map(r => r.examId));
+        const countByExamId = (resultsScan.Items || []).reduce((acc, r) => {
+            acc[r.examId] = (acc[r.examId] || 0) + 1;
+            return acc;
+        }, {});
 
-        const enriched = (exams || []).map(e => ({
-            ...e,
-            hasResults: examIdsWithResults.has(e.examId)
-        }));
+        const enriched = (exams || []).map(e => {
+            const resultCount = countByExamId[e.examId] || 0;
+            return { ...e, hasResults: resultCount > 0, resultCount };
+        });
 
         res.status(200).json(successResponse(enriched, 'Exams retrieved successfully'));
     } catch (error) {
@@ -536,10 +540,13 @@ exports.updateExam = async (req, res) => {
     }
 };
 
-// Delete an exam. Blocked with 409 if any student has marks recorded for it.
+// Delete an exam. Blocked with 409 if marks exist for it, unless the caller
+// opts in with ?cascade=true — in which case all associated ExamResult rows
+// are deleted first, then the exam.
 exports.deleteExam = async (req, res) => {
     try {
         const { examId } = req.params;
+        const cascade = req.query.cascade === 'true';
 
         const existing = await ExamModel.findById(examId);
         if (!existing) {
@@ -547,17 +554,41 @@ exports.deleteExam = async (req, res) => {
         }
 
         const results = await ExamResultModel.getByExamId(examId);
-        if (results && results.length > 0) {
+        const resultCount = results ? results.length : 0;
+
+        if (resultCount > 0 && !cascade) {
             return res.status(409).json(errorResponse(
-                `Cannot delete: ${results.length} student${results.length === 1 ? ' has' : 's have'} marks recorded for this exam.`
+                `Cannot delete: ${resultCount} student${resultCount === 1 ? ' has' : 's have'} marks recorded for this exam. Pass ?cascade=true to delete the marks too.`
             ));
         }
 
+        let deletedMarks = 0;
+        if (resultCount > 0) {
+            deletedMarks = await ExamResultModel.deleteByExamId(examId);
+        }
+
         await ExamModel.delete(examId);
-        res.status(200).json(successResponse({ examId }, 'Exam deleted'));
+        res.status(200).json(successResponse(
+            { examId, deletedMarks },
+            deletedMarks > 0
+                ? `Exam deleted along with ${deletedMarks} mark${deletedMarks === 1 ? '' : 's'} record${deletedMarks === 1 ? '' : 's'}.`
+                : 'Exam deleted'
+        ));
     } catch (error) {
         console.error('Delete exam error:', error);
         res.status(500).json(errorResponse('Failed to delete exam', error));
+    }
+};
+
+// Delete a single exam result row (one student's marks for one exam).
+exports.deleteExamResult = async (req, res) => {
+    try {
+        const { resultId } = req.params;
+        await ExamResultModel.delete(resultId);
+        res.status(200).json(successResponse({ resultId }, 'Marks deleted'));
+    } catch (error) {
+        console.error('Delete exam result error:', error);
+        res.status(500).json(errorResponse('Failed to delete marks', error));
     }
 };
 

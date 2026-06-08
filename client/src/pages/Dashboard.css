@@ -627,11 +627,39 @@
     gap: 18px;
 }
 
+.ll-marks__entry {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
 .ll-marks__row {
     display: grid;
     grid-template-columns: minmax(120px, 1.2fr) auto 2.4fr auto;
     gap: 16px;
     align-items: center;
+}
+
+.ll-marks__subjects {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 8px;
+    padding-left: 0;
+}
+
+.ll-marks__subject-chip {
+    background: var(--cream-100);
+    border-radius: 999px;
+    padding: 3px 10px;
+    font-size: 12px;
+    color: var(--forest-700, #6a7a6c);
+    white-space: nowrap;
+}
+
+.ll-marks__subject-chip strong {
+    color: var(--forest-900);
+    font-weight: 600;
+    margin-left: 4px;
 }
 
 .ll-marks__subject {
