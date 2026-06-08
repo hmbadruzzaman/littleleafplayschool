@@ -31,6 +31,8 @@ router.put('/fee-structure/:feeStructureId', adminController.updateFeeStructure)
 // Exam management
 router.post('/exams', adminController.createExam);
 router.get('/exams', adminController.getAllExams);
+router.put('/exams/:examId', adminController.updateExam);
+router.delete('/exams/:examId', adminController.deleteExam);
 
 // Holiday management
 router.post('/holidays', adminController.addHoliday);

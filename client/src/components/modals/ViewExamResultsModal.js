@@ -7,7 +7,7 @@ function ViewExamResultsModal({ student, onClose }) {
     const [marks, setMarks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const [showUploadForm, setShowUploadForm] = useState(false);
+    const [marksTarget, setMarksTarget] = useState(null); // { exam, existingResult|null }
 
     useEffect(() => {
         fetchData();
@@ -81,12 +81,6 @@ function ViewExamResultsModal({ student, onClose }) {
                                 <div className="details-section">
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                                         <h3 style={{ margin: 0 }}>Exam Results</h3>
-                                        <button
-                                            onClick={() => setShowUploadForm(true)}
-                                            className="btn btn-primary"
-                                        >
-                                            Upload Marks
-                                        </button>
                                     </div>
 
                                     {exams.length === 0 ? (
@@ -106,11 +100,20 @@ function ViewExamResultsModal({ student, onClose }) {
                                                                     {exam.examType} | {exam.examDate}
                                                                 </p>
                                                             </div>
-                                                            {examMarks ? (
-                                                                <span className="status-badge active">Submitted</span>
-                                                            ) : (
-                                                                <span className="status-badge pending">Pending</span>
-                                                            )}
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                                {examMarks ? (
+                                                                    <span className="status-badge active">Submitted</span>
+                                                                ) : (
+                                                                    <span className="status-badge pending">Pending</span>
+                                                                )}
+                                                                <button
+                                                                    onClick={() => setMarksTarget({ exam, existingResult: examMarks || null })}
+                                                                    className="btn btn-primary"
+                                                                    style={{ fontSize: '0.8rem', padding: '4px 12px' }}
+                                                                >
+                                                                    {examMarks ? 'Edit Marks' : 'Upload Marks'}
+                                                                </button>
+                                                            </div>
                                                         </div>
 
                                                         {examMarks && examMarks.subjects && (
@@ -168,13 +171,14 @@ function ViewExamResultsModal({ student, onClose }) {
                 </div>
             </div>
 
-            {showUploadForm && (
+            {marksTarget && (
                 <UploadMarksForm
                     student={student}
-                    exams={exams}
-                    onClose={() => setShowUploadForm(false)}
+                    exams={[marksTarget.exam]}
+                    existingResult={marksTarget.existingResult}
+                    onClose={() => setMarksTarget(null)}
                     onSuccess={() => {
-                        setShowUploadForm(false);
+                        setMarksTarget(null);
                         fetchData();
                     }}
                 />

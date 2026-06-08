@@ -94,6 +94,9 @@ export const adminAPI = {
 
     // Exams
     createExam: (examData) => api.post('/admin/exams', examData),
+    getAllExams: (className) => api.get('/admin/exams', { params: className ? { class: className } : {} }),
+    updateExam: (examId, updates) => api.put(`/admin/exams/${encodeURIComponent(examId)}`, updates),
+    deleteExam: (examId) => api.delete(`/admin/exams/${encodeURIComponent(examId)}`),
 
     // Holidays
     addHoliday: (holidayData) => api.post('/admin/holidays', holidayData),

@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import DashboardSection from './admin/DashboardSection';
 import StudentsSection from './admin/StudentsSection';
 import TeachersSection from './admin/TeachersSection';
+import ExamsSection from './admin/ExamsSection';
 import FeesSection from './admin/FeesSection';
 import ReportsSection from './admin/ReportsSection';
 import ExpenditureSection from './admin/ExpenditureSection';
@@ -16,6 +17,7 @@ function NavIcon({ name }) {
         home:        <><path d="M3 10l9-7 9 7"/><path d="M5 9v11h14V9"/></>,
         users:       <><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 2.7-5.5 6-5.5s6 2.5 6 5.5"/><circle cx="17" cy="9" r="2.2"/><path d="M15 20c0-2.4 1.6-4.4 4-5"/></>,
         chalkboard:  <><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20l4-4 4 4"/><path d="M7 9h10M7 12h6"/></>,
+        notebook:    <><rect x="5" y="3" width="14" height="18" rx="1.5"/><path d="M9 3v18"/><path d="M12 8h4M12 12h4M12 16h3"/></>,
         coin:        <><circle cx="12" cy="12" r="8.5"/><path d="M12 7v10M14.5 9.5c-.5-.9-1.4-1.5-2.5-1.5-1.9 0-2.8 1-2.8 2.1 0 2.8 5.6 1.7 5.6 4.4 0 1.1-.9 2.1-2.8 2.1-1.4 0-2.4-.5-2.8-1.5"/></>,
         chart:       <><path d="M4 20V8M9 20v-6M14 20v-3.5M19 20V11"/></>,
         receipt:     <><path d="M5 3v18l2-1.5L9 21l2-1.5L13 21l2-1.5L17 21l2-1.5V3"/><path d="M8 8h8M8 12h8M8 16h5"/></>,
@@ -35,6 +37,7 @@ const NAV_ITEMS = [
     { key: 'dashboard',   icon: 'home',       label: 'Overview'    },
     { key: 'students',    icon: 'users',      label: 'Students'    },
     { key: 'teachers',    icon: 'chalkboard', label: 'Teachers'    },
+    { key: 'exams',       icon: 'notebook',   label: 'Exams'       },
     { key: 'fees',        icon: 'coin',       label: 'Fees'        },
     { key: 'reports',     icon: 'chart',      label: 'Reports'     },
     { key: 'expenditure', icon: 'receipt',    label: 'Expenditure' },
@@ -45,6 +48,7 @@ const PAGE_META = {
     dashboard:   { title: 'Overview',     sub: "Here's what's happening at school." },
     students:    { title: 'Students',     sub: 'Everyone on the roster, in one place.' },
     teachers:    { title: 'Teachers',     sub: 'Manage your teaching team.' },
+    exams:       { title: 'Exams',        sub: 'Set up assessments and fill in marks.' },
     fees:        { title: 'Fees',         sub: 'Record payments, track dues.' },
     reports:     { title: 'Reports',      sub: 'Financial reports and analytics.' },
     expenditure: { title: 'Expenditure',  sub: 'Every rupee, accounted for.' },
@@ -134,6 +138,7 @@ function AdminDashboard() {
                     )}
                     {activeSection === 'students'    && <StudentsSection />}
                     {activeSection === 'teachers'    && <TeachersSection />}
+                    {activeSection === 'exams'       && <ExamsSection />}
                     {activeSection === 'fees'        && <FeesSection />}
                     {activeSection === 'reports'     && <ReportsSection />}
                     {activeSection === 'expenditure' && <ExpenditureSection />}

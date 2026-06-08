@@ -1,9 +1,21 @@
 import React, { useState } from 'react';
 import './Forms.css';
 
-function UploadMarksForm({ student, exams, onClose, onSuccess }) {
-    const [selectedExamId, setSelectedExamId] = useState('');
-    const [marksData, setMarksData] = useState([]);
+function UploadMarksForm({ student, exams, onClose, onSuccess, existingResult = null }) {
+    const isEdit = !!existingResult;
+
+    // In edit mode, the exam is fixed; pre-fill marksData from the existing result.
+    const initialExamId = existingResult?.examId ?? '';
+    const initialMarks = existingResult?.subjects
+        ? existingResult.subjects.map(s => ({
+              name: s.name,
+              maxMarks: s.maxMarks,
+              marksObtained: s.marksObtained?.toString() ?? ''
+          }))
+        : [];
+
+    const [selectedExamId, setSelectedExamId] = useState(initialExamId);
+    const [marksData, setMarksData] = useState(initialMarks);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -101,9 +113,10 @@ function UploadMarksForm({ student, exams, onClose, onSuccess }) {
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header">
                     <div>
-                        <h2>Upload Marks</h2>
+                        <h2>{isEdit ? 'Edit Marks' : 'Upload Marks'}</h2>
                         <p style={{ margin: '4px 0 0 0', color: '#6b7280', fontSize: '0.9rem' }}>
                             {student.fullName} ({student.rollNumber})
+                            {isEdit && selectedExam ? ` · ${selectedExam.examName}` : ''}
                         </p>
                     </div>
                     <button className="close-btn" onClick={onClose}>&times;</button>
@@ -113,21 +126,23 @@ function UploadMarksForm({ student, exams, onClose, onSuccess }) {
                     <div className="form-body">
                         {error && <div className="error-message">{error}</div>}
 
-                        <div className="form-group">
-                            <label>Select Exam *</label>
-                            <select
-                                value={selectedExamId}
-                                onChange={handleExamChange}
-                                required
-                            >
-                                <option value="">-- Choose an exam --</option>
-                                {exams.map((exam, index) => (
-                                    <option key={index} value={exam.examId}>
-                                        {exam.examName} - {exam.examType} ({exam.examDate})
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
+                        {!isEdit && (
+                            <div className="form-group">
+                                <label>Select Exam *</label>
+                                <select
+                                    value={selectedExamId}
+                                    onChange={handleExamChange}
+                                    required
+                                >
+                                    <option value="">-- Choose an exam --</option>
+                                    {exams.map((exam, index) => (
+                                        <option key={index} value={exam.examId}>
+                                            {exam.examName} - {exam.examType} ({exam.examDate})
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
 
                         {selectedExam && marksData.length > 0 && (
                             <div className="form-group">
@@ -268,7 +283,7 @@ function UploadMarksForm({ student, exams, onClose, onSuccess }) {
                             className="btn btn-primary"
                             disabled={loading || !selectedExamId}
                         >
-                            {loading ? 'Uploading...' : 'Upload Marks'}
+                            {loading ? (isEdit ? 'Saving…' : 'Uploading...') : (isEdit ? 'Save Changes' : 'Upload Marks')}
                         </button>
                     </div>
                 </form>

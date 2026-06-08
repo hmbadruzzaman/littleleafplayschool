@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
 import './Forms.css';
 
-function AddExamForm({ onClose, onSuccess }) {
+function AddExamForm({ onClose, onSuccess, exam = null }) {
+    const isEdit = !!exam;
+    const subjectsLocked = isEdit && !!exam.hasResults;
+
     const [formData, setFormData] = useState({
-        examName: '',
-        class: 'Play',
-        examType: 'MONTHLY',
-        examDate: '',
-        totalMarks: '100'
+        examName: exam?.examName ?? '',
+        class: exam?.class ?? 'Play',
+        examType: exam?.examType ?? 'MONTHLY',
+        examDate: exam?.examDate ?? '',
+        totalMarks: exam?.totalMarks?.toString() ?? '100'
     });
-    const [subjects, setSubjects] = useState([]);
+    const [subjects, setSubjects] = useState(exam?.subjects ?? []);
     const [newSubject, setNewSubject] = useState({ name: '', maxMarks: '' });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -50,16 +53,24 @@ function AddExamForm({ onClose, onSuccess }) {
                 ? 'http://localhost:5001/api'
                 : 'https://welittleleaf.com/api';
 
-            const response = await fetch(`${API_URL}/admin/exams`, {
-                method: 'POST',
+            const url = isEdit
+                ? `${API_URL}/admin/exams/${encodeURIComponent(exam.examId)}`
+                : `${API_URL}/admin/exams`;
+
+            // On edit, only send subjects/totalMarks if they can still be changed.
+            // (Server enforces this too; we just avoid sending fields the server
+            // is going to drop.)
+            const body = subjectsLocked
+                ? { ...formData, totalMarks: undefined, subjects: undefined }
+                : { ...formData, subjects };
+
+            const response = await fetch(url, {
+                method: isEdit ? 'PUT' : 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({
-                    ...formData,
-                    subjects
-                })
+                body: JSON.stringify(body)
             });
 
             const data = await response.json();
@@ -68,11 +79,11 @@ function AddExamForm({ onClose, onSuccess }) {
                 onSuccess();
                 onClose();
             } else {
-                setError(data.message || 'Failed to create exam');
+                setError(data.message || (isEdit ? 'Failed to update exam' : 'Failed to create exam'));
             }
         } catch (err) {
             setError('An error occurred. Please try again.');
-            console.error('Error creating exam:', err);
+            console.error(isEdit ? 'Error updating exam:' : 'Error creating exam:', err);
         } finally {
             setLoading(false);
         }
@@ -82,7 +93,7 @@ function AddExamForm({ onClose, onSuccess }) {
         <div className="modal-overlay" onClick={onClose}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header">
-                    <h2>Create New Exam</h2>
+                    <h2>{isEdit ? 'Edit Exam' : 'Create New Exam'}</h2>
                     <button className="close-btn" onClick={onClose}>&times;</button>
                 </div>
 
@@ -146,6 +157,11 @@ function AddExamForm({ onClose, onSuccess }) {
 
                     <div className="form-group">
                         <label>Subjects *</label>
+                        {subjectsLocked && (
+                            <p style={{ fontSize: '0.85rem', color: '#92400e', backgroundColor: '#fef3c7', border: '1px solid #fbbf24', borderRadius: '6px', padding: '10px 12px', margin: '0 0 10px 0' }}>
+                                Subjects and max marks are locked because marks have been recorded for this exam.
+                            </p>
+                        )}
                         <div style={{ border: '1px solid #d1d5db', borderRadius: '6px', padding: '16px', backgroundColor: '#f9fafb' }}>
                             <div className="form-row" style={{ marginBottom: '12px' }}>
                                 <input
@@ -153,6 +169,7 @@ function AddExamForm({ onClose, onSuccess }) {
                                     placeholder="Subject name (e.g., English)"
                                     value={newSubject.name}
                                     onChange={(e) => setNewSubject({ ...newSubject, name: e.target.value })}
+                                    disabled={subjectsLocked}
                                     style={{ flex: 1 }}
                                 />
                                 <input
@@ -161,12 +178,14 @@ function AddExamForm({ onClose, onSuccess }) {
                                     value={newSubject.maxMarks}
                                     onChange={(e) => setNewSubject({ ...newSubject, maxMarks: e.target.value })}
                                     min="1"
+                                    disabled={subjectsLocked}
                                     style={{ flex: 1 }}
                                 />
                                 <button
                                     type="button"
                                     onClick={handleAddSubject}
                                     className="btn btn-primary"
+                                    disabled={subjectsLocked}
                                     style={{ whiteSpace: 'nowrap' }}
                                 >
                                     Add Subject
@@ -175,7 +194,7 @@ function AddExamForm({ onClose, onSuccess }) {
 
                             {subjects.length > 0 && (
                                 <div style={{ marginTop: '12px' }}>
-                                    <strong style={{ fontSize: '0.9rem', color: '#374151' }}>Added Subjects:</strong>
+                                    <strong style={{ fontSize: '0.9rem', color: '#374151' }}>{subjectsLocked ? 'Subjects:' : 'Added Subjects:'}</strong>
                                     <ul style={{ listStyle: 'none', padding: 0, margin: '8px 0 0 0' }}>
                                         {subjects.map((subject, index) => (
                                             <li
@@ -194,20 +213,22 @@ function AddExamForm({ onClose, onSuccess }) {
                                                 <span style={{ fontSize: '0.9rem' }}>
                                                     {subject.name} - {subject.maxMarks} marks
                                                 </span>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleRemoveSubject(index)}
-                                                    style={{
-                                                        background: 'none',
-                                                        border: 'none',
-                                                        color: '#ef4444',
-                                                        cursor: 'pointer',
-                                                        fontSize: '1.2rem',
-                                                        padding: '0 8px'
-                                                    }}
-                                                >
-                                                    ×
-                                                </button>
+                                                {!subjectsLocked && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleRemoveSubject(index)}
+                                                        style={{
+                                                            background: 'none',
+                                                            border: 'none',
+                                                            color: '#ef4444',
+                                                            cursor: 'pointer',
+                                                            fontSize: '1.2rem',
+                                                            padding: '0 8px'
+                                                        }}
+                                                    >
+                                                        ×
+                                                    </button>
+                                                )}
                                             </li>
                                         ))}
                                     </ul>
@@ -227,7 +248,7 @@ function AddExamForm({ onClose, onSuccess }) {
                             Cancel
                         </button>
                         <button type="submit" className="btn btn-primary" disabled={loading}>
-                            {loading ? 'Creating...' : 'Create Exam'}
+                            {loading ? (isEdit ? 'Saving…' : 'Creating...') : (isEdit ? 'Save Changes' : 'Create Exam')}
                         </button>
                     </div>
                 </form>
