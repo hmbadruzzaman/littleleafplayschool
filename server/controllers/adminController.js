@@ -246,9 +246,49 @@ exports.getAllTeachers = async (req, res) => {
 exports.updateTeacher = async (req, res) => {
     try {
         const { teacherId } = req.params;
-        const updates = req.body;
 
-        const teacher = await TeacherModel.update(teacherId, updates);
+        // Allow-list of editable fields on the Teacher row. Excludes employeeId
+        // (system-generated) and password (lives on the linked User row).
+        const allowed = ['fullName', 'email', 'phone', 'address', 'qualification', 'experience', 'joiningDate', 'assignedClasses', 'status'];
+        const updates = {};
+        for (const k of allowed) {
+            if (req.body[k] !== undefined) updates[k] = req.body[k];
+        }
+
+        const newPassword = typeof req.body.password === 'string' && req.body.password.length > 0
+            ? req.body.password
+            : null;
+
+        if (Object.keys(updates).length === 0 && !newPassword) {
+            return res.status(400).json(errorResponse('No editable fields supplied'));
+        }
+
+        // Update the Teacher row if anything changed there.
+        let teacher;
+        if (Object.keys(updates).length > 0) {
+            teacher = await TeacherModel.update(teacherId, updates);
+        } else {
+            teacher = await TeacherModel.findById(teacherId);
+        }
+
+        // Sync the linked User row (login state and/or password).
+        if (teacher?.employeeId && (updates.status || newPassword)) {
+            try {
+                const user = await UserModel.findByTeacherId(teacher.employeeId);
+                if (user && user.userId) {
+                    const userUpdates = {};
+                    if (updates.status) userUpdates.isActive = updates.status === 'ACTIVE';
+                    if (newPassword)    userUpdates.password = await hashPassword(newPassword);
+                    if (Object.keys(userUpdates).length > 0) {
+                        await UserModel.update(user.userId, userUpdates);
+                    }
+                }
+            } catch (syncErr) {
+                console.error('Failed to sync user row for teacher:', syncErr);
+                // Don't fail the whole request — the teacher row was updated.
+            }
+        }
+
         res.status(200).json(successResponse(teacher, 'Teacher updated successfully'));
     } catch (error) {
         console.error('Update teacher error:', error);

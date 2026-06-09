@@ -1,17 +1,21 @@
 import React, { useState } from 'react';
 import './Forms.css';
 
-function AddTeacherForm({ onClose, onSuccess }) {
+function AddTeacherForm({ onClose, onSuccess, teacher = null }) {
+    const isEdit = !!teacher;
+
     const [formData, setFormData] = useState({
-        fullName: '',
-        email: '',
-        phone: '',
-        address: '',
-        qualification: '',
-        experience: '',
-        joiningDate: '',
-        password: 'password123',
-        status: 'ACTIVE'
+        fullName:      teacher?.fullName      ?? '',
+        email:         teacher?.email         ?? '',
+        phone:         teacher?.phone         ?? '',
+        address:       teacher?.address       ?? '',
+        qualification: teacher?.qualification ?? '',
+        experience:    teacher?.experience?.toString() ?? '',
+        joiningDate:   teacher?.joiningDate   ?? '',
+        // In edit mode the password field starts blank — empty means "leave unchanged".
+        // The stored value can't be pre-filled because passwords are bcrypt-hashed.
+        password:      isEdit ? '' : 'password123',
+        status:        teacher?.status        ?? 'ACTIVE'
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -34,13 +38,24 @@ function AddTeacherForm({ onClose, onSuccess }) {
             const API_URL = window.location.hostname === 'localhost'
                 ? 'http://localhost:5001/api'
                 : 'https://welittleleaf.com/api';
-            const response = await fetch(`${API_URL}/admin/teachers`, {
-                method: 'POST',
+
+            const url = isEdit
+                ? `${API_URL}/admin/teachers/${encodeURIComponent(teacher.teacherId)}`
+                : `${API_URL}/admin/teachers`;
+
+            // On edit we only send the password if admin actually typed a new one.
+            // Empty field = leave the existing password alone (server treats it that way).
+            const body = isEdit && !formData.password
+                ? (() => { const { password, ...rest } = formData; return rest; })()
+                : formData;
+
+            const response = await fetch(url, {
+                method: isEdit ? 'PUT' : 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(body)
             });
 
             const data = await response.json();
@@ -49,11 +64,11 @@ function AddTeacherForm({ onClose, onSuccess }) {
                 onSuccess();
                 onClose();
             } else {
-                setError(data.message || 'Failed to create teacher');
+                setError(data.message || (isEdit ? 'Failed to update teacher' : 'Failed to create teacher'));
             }
         } catch (err) {
             setError('An error occurred. Please try again.');
-            console.error('Error creating teacher:', err);
+            console.error(isEdit ? 'Error updating teacher:' : 'Error creating teacher:', err);
         } finally {
             setLoading(false);
         }
@@ -63,7 +78,7 @@ function AddTeacherForm({ onClose, onSuccess }) {
         <div className="modal-overlay" onClick={onClose}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header">
-                    <h2>Add New Teacher</h2>
+                    <h2>{isEdit ? 'Edit Teacher' : 'Add New Teacher'}</h2>
                     <button className="close-btn" onClick={onClose}>&times;</button>
                 </div>
 
@@ -80,7 +95,9 @@ function AddTeacherForm({ onClose, onSuccess }) {
                             placeholder="Teacher's full name"
                             required
                         />
-                        <small style={{color: '#6b7280', fontSize: '0.85rem'}}>Employee ID will be generated automatically</small>
+                        <small style={{color: '#6b7280', fontSize: '0.85rem'}}>
+                            {isEdit ? `Employee ID: ${teacher.employeeId}` : 'Employee ID will be generated automatically'}
+                        </small>
                     </div>
 
                     <div className="form-row">
@@ -161,15 +178,21 @@ function AddTeacherForm({ onClose, onSuccess }) {
                         </div>
 
                         <div className="form-group">
-                            <label>Password *</label>
+                            <label>{isEdit ? 'New Password' : 'Password *'}</label>
                             <input
                                 type="text"
                                 name="password"
                                 value={formData.password}
                                 onChange={handleChange}
-                                placeholder="Login password"
-                                required
+                                placeholder={isEdit ? 'Leave blank to keep current' : 'Login password'}
+                                required={!isEdit}
+                                autoComplete="new-password"
                             />
+                            {isEdit && (
+                                <small style={{color: '#6b7280', fontSize: '0.85rem'}}>
+                                    Passwords are stored hashed and can't be displayed. Type a new one to rotate it; leave blank to keep the existing one.
+                                </small>
+                            )}
                         </div>
                     </div>
 
@@ -190,7 +213,7 @@ function AddTeacherForm({ onClose, onSuccess }) {
                             Cancel
                         </button>
                         <button type="submit" className="btn btn-primary" disabled={loading}>
-                            {loading ? 'Creating...' : 'Create Teacher'}
+                            {loading ? (isEdit ? 'Saving…' : 'Creating...') : (isEdit ? 'Save Changes' : 'Create Teacher')}
                         </button>
                     </div>
                 </form>
