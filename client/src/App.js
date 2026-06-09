@@ -8,6 +8,7 @@ import LoginPage from './pages/LoginPage';
 import StudentDashboard from './pages/StudentDashboard';
 import TeacherDashboard from './pages/TeacherDashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import MarkSheetPage from './pages/MarkSheetPage';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -53,6 +54,15 @@ function AppRoutes() {
                 element={
                     <ProtectedRoute allowedRoles={['ADMIN']}>
                         <AdminDashboard />
+                    </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/marksheet/:studentId/:examId"
+                element={
+                    <ProtectedRoute allowedRoles={['ADMIN', 'TEACHER']}>
+                        <MarkSheetPage />
                     </ProtectedRoute>
                 }
             />

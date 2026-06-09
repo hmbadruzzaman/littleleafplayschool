@@ -145,11 +145,22 @@ function TeacherStudentDetailsModal({ student, onClose }) {
                                                                 {exam.examType} | {exam.examDate}
                                                             </p>
                                                         </div>
-                                                        {examMarks ? (
-                                                            <span className="status-badge active">Submitted</span>
-                                                        ) : (
-                                                            <span className="status-badge pending">Pending</span>
-                                                        )}
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                                                            {examMarks ? (
+                                                                <span className="status-badge active">Submitted</span>
+                                                            ) : (
+                                                                <span className="status-badge pending">Pending</span>
+                                                            )}
+                                                            {examMarks && (
+                                                                <button
+                                                                    onClick={() => window.open(`/marksheet/${encodeURIComponent(student.studentId)}/${encodeURIComponent(exam.examId)}`, '_blank')}
+                                                                    className="btn btn-secondary"
+                                                                    style={{ fontSize: '0.8rem', padding: '4px 12px' }}
+                                                                >
+                                                                    Print Mark Sheet
+                                                                </button>
+                                                            )}
+                                                        </div>
                                                     </div>
 
                                                     {examMarks && examMarks.subjects && (

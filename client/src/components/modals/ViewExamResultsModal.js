@@ -127,13 +127,22 @@ function ViewExamResultsModal({ student, onClose }) {
                                                                     {examMarks ? 'Edit Marks' : 'Upload Marks'}
                                                                 </button>
                                                                 {examMarks && (
-                                                                    <button
-                                                                        onClick={() => handleDeleteMarks(exam, examMarks)}
-                                                                        className="btn btn-secondary"
-                                                                        style={{ fontSize: '0.8rem', padding: '4px 12px', color: '#b85b4a', borderColor: '#f0c8c0' }}
-                                                                    >
-                                                                        Delete Marks
-                                                                    </button>
+                                                                    <>
+                                                                        <button
+                                                                            onClick={() => window.open(`/marksheet/${encodeURIComponent(student.studentId)}/${encodeURIComponent(exam.examId)}`, '_blank')}
+                                                                            className="btn btn-secondary"
+                                                                            style={{ fontSize: '0.8rem', padding: '4px 12px' }}
+                                                                        >
+                                                                            Print Mark Sheet
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => handleDeleteMarks(exam, examMarks)}
+                                                                            className="btn btn-secondary"
+                                                                            style={{ fontSize: '0.8rem', padding: '4px 12px', color: '#b85b4a', borderColor: '#f0c8c0' }}
+                                                                        >
+                                                                            Delete Marks
+                                                                        </button>
+                                                                    </>
                                                                 )}
                                                             </div>
                                                         </div>

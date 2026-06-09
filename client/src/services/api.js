@@ -72,7 +72,9 @@ export const teacherAPI = {
     getAllExams: () => api.get('/teacher/exams'),
     uploadMarks: (marksData) => api.post('/teacher/marks', marksData),
     bulkUploadMarks: (bulkData) => api.post('/teacher/marks/bulk', bulkData),
-    getExamResults: (examId) => api.get(`/teacher/exams/${examId}/results`)
+    getExamResults: (examId) => api.get(`/teacher/exams/${examId}/results`),
+    getMarkSheet: (studentId, examId) =>
+        api.get(`/teacher/marksheet/${encodeURIComponent(studentId)}/${encodeURIComponent(examId)}`)
 };
 
 // Admin APIs

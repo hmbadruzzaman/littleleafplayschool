@@ -4,6 +4,52 @@ const ExamResultModel = require('../models/ExamResult');
 const { docClient, TABLES } = require('../config/dynamodb');
 const { successResponse, errorResponse } = require('../utils/helpers');
 
+// Bundle everything a printable mark sheet needs in one round-trip:
+// student, exam, the result for (student, exam), and the school info row.
+exports.getMarkSheetBundle = async (req, res) => {
+    try {
+        const { studentId, examId } = req.params;
+
+        const student = await StudentModel.findById(studentId);
+        if (!student) {
+            return res.status(404).json(errorResponse('Student not found'));
+        }
+
+        const exam = await ExamModel.findById(examId);
+        if (!exam) {
+            return res.status(404).json(errorResponse('Exam not found'));
+        }
+
+        const result = await ExamResultModel.getByStudentAndExam(studentId, examId);
+        if (!result) {
+            return res.status(404).json(errorResponse('No marks found for this student and exam'));
+        }
+
+        let schoolInfo = {};
+        try {
+            const infoRes = await docClient.get({
+                TableName: TABLES.SCHOOL_INFO,
+                Key: { infoId: 'INFO#SCHOOL' }
+            }).promise();
+            schoolInfo = infoRes.Item || {};
+        } catch (e) {
+            // Treat missing/erroring school info as empty — the page falls back to defaults.
+            console.warn('Could not load school info for mark sheet:', e?.message);
+        }
+
+        // Drop the student's password if it's somehow there (defence in depth).
+        const { password, ...safeStudent } = student;
+
+        res.status(200).json(successResponse(
+            { student: safeStudent, exam, result, schoolInfo },
+            'Mark sheet bundle retrieved'
+        ));
+    } catch (error) {
+        console.error('Get mark sheet bundle error:', error);
+        res.status(500).json(errorResponse('Failed to load mark sheet', error));
+    }
+};
+
 // Get all students (excluding fees information)
 exports.getAllStudents = async (req, res) => {
     try {

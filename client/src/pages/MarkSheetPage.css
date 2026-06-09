@@ -1,0 +1,227 @@
+/* ── On-screen layout (mimics A4 page) ───────────────── */
+
+.ll-marksheet-page {
+    min-height: 100vh;
+    background: #f4eee0;
+    padding: 24px;
+    display: flex;
+    justify-content: center;
+}
+
+.ll-marksheet-status {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display, serif);
+    font-size: 18px;
+    color: #4a5d3f;
+    padding: 24px;
+    text-align: center;
+}
+
+.ll-marksheet-status--error {
+    color: #b85b4a;
+}
+
+.ll-marksheet {
+    width: 100%;
+    max-width: 800px;
+    background: #ffffff;
+    border: 1px solid #d8d3c4;
+    border-radius: 8px;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.06);
+    padding: 48px 56px;
+    color: #2a2a26;
+    font-family: 'Geist', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+}
+
+/* Header ─────────────────────────────────────────────── */
+
+.ll-marksheet__header {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+}
+
+.ll-marksheet__logo {
+    color: #4a5d3f;
+    flex-shrink: 0;
+}
+
+.ll-marksheet__school-name {
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-size: 30px;
+    line-height: 1.1;
+    color: #2a3a25;
+    margin-bottom: 4px;
+}
+
+.ll-marksheet__school-line {
+    font-size: 12px;
+    color: #6a6a60;
+    margin-top: 2px;
+}
+
+.ll-marksheet__divider {
+    border: 0;
+    border-top: 1px solid #d8d3c4;
+    margin: 22px 0 0;
+}
+
+.ll-marksheet__title {
+    text-align: center;
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-style: italic;
+    font-size: 24px;
+    letter-spacing: 0.04em;
+    color: #4a5d3f;
+    margin: 16px 0 28px;
+}
+
+/* Student / exam info block ──────────────────────────── */
+
+.ll-marksheet__info {
+    border: 1px solid #d8d3c4;
+    border-radius: 6px;
+    padding: 14px 18px;
+    margin-bottom: 24px;
+    background: #fbf8f0;
+}
+
+.ll-marksheet__info-row {
+    display: flex;
+    padding: 4px 0;
+}
+
+.ll-marksheet__info-label {
+    width: 140px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #6a6a60;
+    font-weight: 600;
+}
+
+.ll-marksheet__info-value {
+    flex: 1;
+    font-size: 14px;
+    color: #2a2a26;
+}
+
+/* Subject table ──────────────────────────────────────── */
+
+.ll-marksheet__table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 28px;
+}
+
+.ll-marksheet__table th,
+.ll-marksheet__table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #e3ddcb;
+    text-align: left;
+    font-size: 14px;
+}
+
+.ll-marksheet__table th {
+    background: #f4eee0;
+    color: #2a3a25;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+}
+
+.ll-marksheet__table td.num,
+.ll-marksheet__table th.num {
+    text-align: right;
+}
+
+.ll-marksheet__total-row td {
+    font-weight: 700;
+    background: #fbf8f0;
+}
+
+.ll-marksheet__grade-row td {
+    font-weight: 700;
+    background: #f0f5e8;
+    color: #2a3a25;
+}
+
+/* Footer ─────────────────────────────────────────────── */
+
+.ll-marksheet__issued {
+    font-size: 12px;
+    color: #6a6a60;
+    margin-bottom: 48px;
+}
+
+.ll-marksheet__signatures {
+    display: flex;
+    justify-content: space-between;
+    gap: 60px;
+    margin-top: 32px;
+}
+
+.ll-marksheet__sig {
+    flex: 1;
+    text-align: center;
+}
+
+.ll-marksheet__sig-line {
+    border-top: 1px solid #4a4a40;
+    height: 1px;
+    margin-bottom: 8px;
+}
+
+.ll-marksheet__sig-label {
+    font-size: 12px;
+    color: #4a4a40;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+/* ── Print styles ────────────────────────────────────── */
+
+@page {
+    size: A4;
+    margin: 12mm;
+}
+
+@media print {
+    /* Tell the browser to keep background colors and images. Without this,
+       Chrome/Safari/Firefox default to "economy" and strip the cream header
+       tint, the green grade band, and the info-block fill — turning the
+       printed sheet into a near-monochrome version of what's on screen. */
+    .ll-marksheet,
+    .ll-marksheet * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+    }
+
+    body {
+        background: #ffffff !important;
+    }
+    .ll-marksheet-page {
+        background: #ffffff;
+        padding: 0;
+        min-height: 0;
+    }
+    .ll-marksheet {
+        max-width: none;
+        width: 100%;
+        border: none;
+        box-shadow: none;
+        border-radius: 0;
+        padding: 0;
+    }
+    .ll-marksheet__table {
+        page-break-inside: avoid;
+    }
+    .ll-marksheet__signatures {
+        page-break-inside: avoid;
+    }
+}
