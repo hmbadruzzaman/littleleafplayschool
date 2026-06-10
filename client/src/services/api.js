@@ -73,8 +73,11 @@ export const teacherAPI = {
     uploadMarks: (marksData) => api.post('/teacher/marks', marksData),
     bulkUploadMarks: (bulkData) => api.post('/teacher/marks/bulk', bulkData),
     getExamResults: (examId) => api.get(`/teacher/exams/${examId}/results`),
-    getMarkSheet: (studentId, examId) =>
-        api.get(`/teacher/marksheet/${encodeURIComponent(studentId)}/${encodeURIComponent(examId)}`)
+    getMarkSheet: (studentId, examIds) => {
+        const idList = Array.isArray(examIds) ? examIds : [examIds];
+        const joined = idList.map(encodeURIComponent).join(',');
+        return api.get(`/teacher/marksheet/${encodeURIComponent(studentId)}/${joined}`);
+    }
 };
 
 // Admin APIs

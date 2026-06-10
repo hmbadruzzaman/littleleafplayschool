@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import UploadMarksForm from '../forms/UploadMarksForm';
+import { formatExamDateRange, formatDate, subjectDate, examHasPerSubjectDates } from '../../utils/examDates';
 import './Modals.css';
 
 function TeacherStudentDetailsModal({ student, onClose }) {
@@ -8,6 +9,23 @@ function TeacherStudentDetailsModal({ student, onClose }) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [showUploadForm, setShowUploadForm] = useState(false);
+    const [selectedExamIds, setSelectedExamIds] = useState([]);
+
+    const MAX_SHEETS = 4;
+
+    const toggleSelected = (examId) => {
+        setSelectedExamIds(prev => {
+            if (prev.includes(examId)) return prev.filter(id => id !== examId);
+            if (prev.length >= MAX_SHEETS) return prev;
+            return [...prev, examId];
+        });
+    };
+
+    const printSelected = () => {
+        if (selectedExamIds.length === 0) return;
+        const ids = selectedExamIds.map(encodeURIComponent).join(',');
+        window.open(`/marksheet/${encodeURIComponent(student.studentId)}/${ids}`, '_blank');
+    };
 
     useEffect(() => {
         fetchData();
@@ -118,14 +136,25 @@ function TeacherStudentDetailsModal({ student, onClose }) {
                             </div>
 
                             <div className="details-section">
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', gap: 10, flexWrap: 'wrap' }}>
                                     <h3 style={{ margin: 0 }}>Exam Results</h3>
-                                    <button
-                                        onClick={() => setShowUploadForm(true)}
-                                        className="btn btn-primary"
-                                    >
-                                        Upload Marks
-                                    </button>
+                                    <div style={{ display: 'flex', gap: 8 }}>
+                                        <button
+                                            onClick={printSelected}
+                                            disabled={selectedExamIds.length === 0}
+                                            className="btn btn-secondary"
+                                            style={{ opacity: selectedExamIds.length === 0 ? 0.5 : 1 }}
+                                            title={selectedExamIds.length === 0 ? 'Select one or more exams with marks to print' : ''}
+                                        >
+                                            Print Mark Sheet ({selectedExamIds.length}/{MAX_SHEETS})
+                                        </button>
+                                        <button
+                                            onClick={() => setShowUploadForm(true)}
+                                            className="btn btn-primary"
+                                        >
+                                            Upload Marks
+                                        </button>
+                                    </div>
                                 </div>
 
                                 {exams.length === 0 ? (
@@ -139,50 +168,77 @@ function TeacherStudentDetailsModal({ student, onClose }) {
                                             return (
                                                 <div key={index} className="exam-card">
                                                     <div className="exam-header">
-                                                        <div>
-                                                            <h4 style={{ margin: '0 0 4px 0' }}>{exam.examName}</h4>
-                                                            <p style={{ margin: 0, fontSize: '0.85rem', color: '#6b7280' }}>
-                                                                {exam.examType} | {exam.examDate}
-                                                            </p>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                                            {examMarks && (() => {
+                                                                const isChecked = selectedExamIds.includes(exam.examId);
+                                                                const atCap = !isChecked && selectedExamIds.length >= MAX_SHEETS;
+                                                                return (
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={isChecked}
+                                                                        onChange={() => toggleSelected(exam.examId)}
+                                                                        disabled={atCap}
+                                                                        title={atCap ? `Maximum ${MAX_SHEETS} exams per mark sheet` : 'Include in mark sheet'}
+                                                                        style={{ width: 18, height: 18, cursor: atCap ? 'not-allowed' : 'pointer', opacity: atCap ? 0.4 : 1 }}
+                                                                    />
+                                                                );
+                                                            })()}
+                                                            <div>
+                                                                <h4 style={{ margin: '0 0 4px 0' }}>{exam.examName}</h4>
+                                                                <p style={{ margin: 0, fontSize: '0.85rem', color: '#6b7280' }}>
+                                                                    {exam.examType} | {formatExamDateRange(exam)}
+                                                                </p>
+                                                            </div>
                                                         </div>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                                                            {examMarks ? (
-                                                                <span className="status-badge active">Submitted</span>
-                                                            ) : (
-                                                                <span className="status-badge pending">Pending</span>
-                                                            )}
-                                                            {examMarks && (
-                                                                <button
-                                                                    onClick={() => window.open(`/marksheet/${encodeURIComponent(student.studentId)}/${encodeURIComponent(exam.examId)}`, '_blank')}
-                                                                    className="btn btn-secondary"
-                                                                    style={{ fontSize: '0.8rem', padding: '4px 12px' }}
-                                                                >
-                                                                    Print Mark Sheet
-                                                                </button>
-                                                            )}
-                                                        </div>
+                                                        {examMarks ? (
+                                                            <span className="status-badge active">Submitted</span>
+                                                        ) : (
+                                                            <span className="status-badge pending">Pending</span>
+                                                        )}
                                                     </div>
 
-                                                    {examMarks && examMarks.subjects && (
+                                                    {examMarks && examMarks.subjects && (() => {
+                                                        const showDateCol = examHasPerSubjectDates(exam);
+                                                        const dateForSubject = (subjName) => {
+                                                            const examSubj = (exam.subjects || []).find(s => s.name === subjName);
+                                                            return subjectDate(exam, examSubj);
+                                                        };
+                                                        return (
                                                         <div className="marks-table" style={{ marginTop: '12px' }}>
                                                             <table style={{ width: '100%', fontSize: '0.9rem' }}>
                                                                 <thead>
                                                                     <tr style={{ backgroundColor: '#f9fafb' }}>
                                                                         <th style={{ padding: '8px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Subject</th>
+                                                                        {showDateCol && <th style={{ padding: '8px', textAlign: 'center', borderBottom: '1px solid #e5e7eb' }}>Date</th>}
                                                                         <th style={{ padding: '8px', textAlign: 'center', borderBottom: '1px solid #e5e7eb' }}>Marks Obtained</th>
                                                                         <th style={{ padding: '8px', textAlign: 'center', borderBottom: '1px solid #e5e7eb' }}>Max Marks</th>
                                                                     </tr>
                                                                 </thead>
                                                                 <tbody>
-                                                                    {examMarks.subjects.map((subject, idx) => (
-                                                                        <tr key={idx}>
-                                                                            <td style={{ padding: '8px', borderBottom: '1px solid #e5e7eb' }}>{subject.name}</td>
-                                                                            <td style={{ padding: '8px', textAlign: 'center', borderBottom: '1px solid #e5e7eb' }}>{subject.marksObtained}</td>
-                                                                            <td style={{ padding: '8px', textAlign: 'center', borderBottom: '1px solid #e5e7eb' }}>{subject.maxMarks}</td>
-                                                                        </tr>
-                                                                    ))}
+                                                                    {examMarks.subjects.map((subject, idx) => {
+                                                                        const hasComps = Array.isArray(subject.components) && subject.components.length > 0;
+                                                                        return (
+                                                                            <React.Fragment key={idx}>
+                                                                                <tr style={hasComps ? { backgroundColor: '#f9fafb', fontWeight: 600 } : {}}>
+                                                                                    <td style={{ padding: '8px', borderBottom: '1px solid #e5e7eb' }}>{subject.name}</td>
+                                                                                    {showDateCol && <td style={{ padding: '8px', textAlign: 'center', borderBottom: '1px solid #e5e7eb', color: '#6b7280', fontWeight: 400 }}>{formatDate(dateForSubject(subject.name))}</td>}
+                                                                                    <td style={{ padding: '8px', textAlign: 'center', borderBottom: '1px solid #e5e7eb' }}>{subject.marksObtained}</td>
+                                                                                    <td style={{ padding: '8px', textAlign: 'center', borderBottom: '1px solid #e5e7eb' }}>{subject.maxMarks}</td>
+                                                                                </tr>
+                                                                                {hasComps && subject.components.map((c, ci) => (
+                                                                                    <tr key={`${idx}-${ci}`}>
+                                                                                        <td style={{ padding: '6px 8px 6px 24px', borderBottom: '1px solid #e5e7eb', color: '#374151', fontSize: '0.85rem' }}>↳ {c.name}</td>
+                                                                                        {showDateCol && <td style={{ padding: '6px 8px', borderBottom: '1px solid #e5e7eb' }}></td>}
+                                                                                        <td style={{ padding: '6px 8px', textAlign: 'center', borderBottom: '1px solid #e5e7eb', fontSize: '0.85rem' }}>{c.marksObtained}</td>
+                                                                                        <td style={{ padding: '6px 8px', textAlign: 'center', borderBottom: '1px solid #e5e7eb', fontSize: '0.85rem' }}>{c.maxMarks}</td>
+                                                                                    </tr>
+                                                                                ))}
+                                                                            </React.Fragment>
+                                                                        );
+                                                                    })}
                                                                     <tr style={{ fontWeight: '600', backgroundColor: '#f9fafb' }}>
                                                                         <td style={{ padding: '8px' }}>Total</td>
+                                                                        {showDateCol && <td />}
                                                                         <td style={{ padding: '8px', textAlign: 'center' }}>
                                                                             {examMarks.subjects.reduce((sum, s) => sum + (parseInt(s.marksObtained) || 0), 0)}
                                                                         </td>
@@ -193,7 +249,8 @@ function TeacherStudentDetailsModal({ student, onClose }) {
                                                                 </tbody>
                                                             </table>
                                                         </div>
-                                                    )}
+                                                        );
+                                                    })()}
                                                 </div>
                                             );
                                         })}

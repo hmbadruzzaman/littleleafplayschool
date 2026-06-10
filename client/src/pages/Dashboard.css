@@ -643,8 +643,17 @@
 .ll-marks__subjects {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px 8px;
+    gap: 8px 10px;
     padding-left: 0;
+}
+
+/* A subject "group" bundles the subject chip with its component sub-chips
+   underneath. Subjects without components still render as a single chip. */
+.ll-marks__subject-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: flex-start;
 }
 
 .ll-marks__subject-chip {
@@ -660,6 +669,31 @@
     color: var(--forest-900);
     font-weight: 600;
     margin-left: 4px;
+}
+
+.ll-marks__components {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 6px;
+    padding-left: 10px;
+    border-left: 2px solid var(--cream-200, #ece6d4);
+    margin-left: 4px;
+}
+
+.ll-marks__component-chip {
+    background: transparent;
+    border: 1px solid var(--cream-200, #ece6d4);
+    border-radius: 999px;
+    padding: 1px 8px;
+    font-size: 11px;
+    color: var(--forest-700, #6a7a6c);
+    white-space: nowrap;
+}
+
+.ll-marks__component-chip strong {
+    color: var(--forest-900);
+    font-weight: 600;
+    margin-left: 3px;
 }
 
 .ll-marks__subject {

@@ -1,17 +1,50 @@
 import React, { useState } from 'react';
+import { subjectDate, formatDate, examEarliestDate } from '../../utils/examDates';
 import './Forms.css';
+
+// Build a marksData entry for a subject.
+// - When the subject has components, store `components: [{name, maxMarks, marksObtained}]` and no top-level marksObtained.
+// - Otherwise, store today's flat shape (`marksObtained`, `maxMarks`).
+// existingComponentMarks/existingFlatMarks: prior result values for pre-fill (edit mode).
+function buildMarksRow(exam, subject, existingSubject) {
+    const effectiveDate = subjectDate(exam, subject);
+    const hasComponents = Array.isArray(subject.components) && subject.components.length > 0;
+    if (hasComponents) {
+        return {
+            name: subject.name,
+            examDate: effectiveDate,
+            maxMarks: subject.maxMarks,
+            components: subject.components.map(c => {
+                const existingC = existingSubject?.components?.find(ec => ec.name === c.name);
+                return {
+                    name: c.name,
+                    maxMarks: c.maxMarks,
+                    marksObtained: existingC?.marksObtained != null ? existingC.marksObtained.toString() : '',
+                };
+            }),
+        };
+    }
+    return {
+        name: subject.name,
+        examDate: effectiveDate,
+        maxMarks: subject.maxMarks,
+        marksObtained: existingSubject?.marksObtained != null ? existingSubject.marksObtained.toString() : '',
+    };
+}
 
 function UploadMarksForm({ student, exams, onClose, onSuccess, existingResult = null }) {
     const isEdit = !!existingResult;
 
-    // In edit mode, the exam is fixed; pre-fill marksData from the existing result.
+    // In edit mode, the exam is fixed; pre-fill marksData from the existing result
+    // by matching against the exam's subject definition (source of truth for shape).
     const initialExamId = existingResult?.examId ?? '';
-    const initialMarks = existingResult?.subjects
-        ? existingResult.subjects.map(s => ({
-              name: s.name,
-              maxMarks: s.maxMarks,
-              marksObtained: s.marksObtained?.toString() ?? ''
-          }))
+    const initialExam = existingResult && exams.find(ex => ex.examId === existingResult.examId);
+    const initialMarks = initialExam?.subjects
+        ? initialExam.subjects.map(subject => buildMarksRow(
+              initialExam,
+              subject,
+              existingResult.subjects?.find(s => s.name === subject.name)
+          ))
         : [];
 
     const [selectedExamId, setSelectedExamId] = useState(initialExamId);
@@ -23,15 +56,9 @@ function UploadMarksForm({ student, exams, onClose, onSuccess, existingResult = 
         const examId = e.target.value;
         setSelectedExamId(examId);
 
-        // Find the selected exam and initialize marks data
         const exam = exams.find(ex => ex.examId === examId);
         if (exam && exam.subjects && exam.subjects.length > 0) {
-            const initialMarks = exam.subjects.map(subject => ({
-                name: subject.name,
-                maxMarks: subject.maxMarks,
-                marksObtained: ''
-            }));
-            setMarksData(initialMarks);
+            setMarksData(exam.subjects.map(s => buildMarksRow(exam, s, null)));
             setError('');
         } else {
             setMarksData([]);
@@ -43,30 +70,58 @@ function UploadMarksForm({ student, exams, onClose, onSuccess, existingResult = 
 
     const handleMarksChange = (index, value) => {
         const updatedMarks = [...marksData];
-        updatedMarks[index].marksObtained = value;
+        updatedMarks[index] = { ...updatedMarks[index], marksObtained: value };
         setMarksData(updatedMarks);
+    };
+
+    const handleComponentChange = (index, ci, value) => {
+        const updatedMarks = [...marksData];
+        const subj = updatedMarks[index];
+        updatedMarks[index] = {
+            ...subj,
+            components: subj.components.map((c, j) => (j === ci ? { ...c, marksObtained: value } : c)),
+        };
+        setMarksData(updatedMarks);
+    };
+
+    // Per-subject derived obtained total (for display in component-subject rows).
+    const subjectObtainedTotal = (subj) => {
+        if (Array.isArray(subj.components)) {
+            return subj.components.reduce((s, c) => s + (parseFloat(c.marksObtained) || 0), 0);
+        }
+        return parseFloat(subj.marksObtained) || 0;
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Validate that all marks are entered
-        const hasEmptyMarks = marksData.some(m => m.marksObtained === '');
-        if (hasEmptyMarks) {
-            setError('Please enter marks for all subjects');
-            return;
-        }
-
-        // Validate that marks don't exceed max marks
-        const hasInvalidMarks = marksData.some(m => {
-            const obtained = parseFloat(m.marksObtained);
-            const max = parseFloat(m.maxMarks);
-            return obtained > max || obtained < 0;
-        });
-
-        if (hasInvalidMarks) {
-            setError('Marks obtained cannot exceed maximum marks or be negative');
-            return;
+        // Per-subject validation. Each cell must be filled, non-negative, ≤ its max.
+        for (const m of marksData) {
+            if (Array.isArray(m.components)) {
+                for (const c of m.components) {
+                    if (c.marksObtained === '' || c.marksObtained == null) {
+                        setError(`Please enter marks for ${m.name} · ${c.name}.`);
+                        return;
+                    }
+                    const obtained = parseFloat(c.marksObtained);
+                    const max      = parseFloat(c.maxMarks);
+                    if (isNaN(obtained) || obtained < 0 || obtained > max) {
+                        setError(`Marks for ${m.name} · ${c.name} must be between 0 and ${max}.`);
+                        return;
+                    }
+                }
+            } else {
+                if (m.marksObtained === '' || m.marksObtained == null) {
+                    setError(`Please enter marks for ${m.name}.`);
+                    return;
+                }
+                const obtained = parseFloat(m.marksObtained);
+                const max      = parseFloat(m.maxMarks);
+                if (isNaN(obtained) || obtained < 0 || obtained > max) {
+                    setError(`Marks for ${m.name} must be between 0 and ${max}.`);
+                    return;
+                }
+            }
         }
 
         setLoading(true);
@@ -137,7 +192,7 @@ function UploadMarksForm({ student, exams, onClose, onSuccess, existingResult = 
                                     <option value="">-- Choose an exam --</option>
                                     {exams.map((exam, index) => (
                                         <option key={index} value={exam.examId}>
-                                            {exam.examName} - {exam.examType} ({exam.examDate})
+                                            {exam.examName} - {exam.examType} ({formatDate(examEarliestDate(exam))})
                                         </option>
                                     ))}
                                 </select>
@@ -191,37 +246,101 @@ function UploadMarksForm({ student, exams, onClose, onSuccess, existingResult = 
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {marksData.map((subject, index) => (
-                                                <tr key={index} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                                                    <td style={{ padding: '12px 16px', fontSize: '0.95rem' }}>
-                                                        {subject.name}
-                                                    </td>
-                                                    <td style={{ padding: '12px 16px', textAlign: 'center', fontSize: '0.95rem', color: '#6b7280' }}>
-                                                        {subject.maxMarks}
-                                                    </td>
-                                                    <td style={{ padding: '12px 16px', textAlign: 'center' }}>
-                                                        <input
-                                                            type="number"
-                                                            value={subject.marksObtained}
-                                                            onChange={(e) => handleMarksChange(index, e.target.value)}
-                                                            min="0"
-                                                            max={subject.maxMarks}
-                                                            step="0.5"
-                                                            placeholder="0"
-                                                            required
-                                                            style={{
-                                                                width: '100%',
-                                                                maxWidth: '120px',
-                                                                padding: '8px 12px',
-                                                                border: '1px solid #d1d5db',
-                                                                borderRadius: '6px',
-                                                                fontSize: '0.9rem',
-                                                                textAlign: 'center'
-                                                            }}
-                                                        />
-                                                    </td>
-                                                </tr>
-                                            ))}
+                                            {marksData.map((subject, index) => {
+                                                const hasComponents = Array.isArray(subject.components);
+                                                if (!hasComponents) {
+                                                    return (
+                                                        <tr key={index} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                                                            <td style={{ padding: '12px 16px', fontSize: '0.95rem' }}>
+                                                                {subject.name}
+                                                                {subject.examDate && (
+                                                                    <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '2px' }}>
+                                                                        {formatDate(subject.examDate)}
+                                                                    </div>
+                                                                )}
+                                                            </td>
+                                                            <td style={{ padding: '12px 16px', textAlign: 'center', fontSize: '0.95rem', color: '#6b7280' }}>
+                                                                {subject.maxMarks}
+                                                            </td>
+                                                            <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                                                                <input
+                                                                    type="number"
+                                                                    value={subject.marksObtained}
+                                                                    onChange={(e) => handleMarksChange(index, e.target.value)}
+                                                                    min="0"
+                                                                    max={subject.maxMarks}
+                                                                    step="0.5"
+                                                                    placeholder="0"
+                                                                    required
+                                                                    style={{
+                                                                        width: '100%',
+                                                                        maxWidth: '120px',
+                                                                        padding: '8px 12px',
+                                                                        border: '1px solid #d1d5db',
+                                                                        borderRadius: '6px',
+                                                                        fontSize: '0.9rem',
+                                                                        textAlign: 'center'
+                                                                    }}
+                                                                />
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                }
+                                                // Component-bearing subject: render a subject row with the running
+                                                // total, then one indented row per component with its own input.
+                                                const obtainedSum = subjectObtainedTotal(subject);
+                                                return (
+                                                    <React.Fragment key={index}>
+                                                        <tr style={{ borderBottom: '1px solid #e5e7eb', backgroundColor: '#f9fafb' }}>
+                                                            <td style={{ padding: '12px 16px', fontSize: '0.95rem', fontWeight: 600 }}>
+                                                                {subject.name}
+                                                                {subject.examDate && (
+                                                                    <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '2px', fontWeight: 400 }}>
+                                                                        {formatDate(subject.examDate)}
+                                                                    </div>
+                                                                )}
+                                                            </td>
+                                                            <td style={{ padding: '12px 16px', textAlign: 'center', fontSize: '0.95rem', color: '#6b7280' }}>
+                                                                {subject.maxMarks}
+                                                            </td>
+                                                            <td style={{ padding: '12px 16px', textAlign: 'center', fontSize: '0.95rem', color: '#1f2937', fontWeight: 600 }}>
+                                                                {obtainedSum}
+                                                            </td>
+                                                        </tr>
+                                                        {subject.components.map((c, ci) => (
+                                                            <tr key={`${index}-${ci}`} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                                                                <td style={{ padding: '10px 16px 10px 36px', fontSize: '0.9rem', color: '#374151' }}>
+                                                                    ↳ {c.name}
+                                                                </td>
+                                                                <td style={{ padding: '10px 16px', textAlign: 'center', fontSize: '0.9rem', color: '#6b7280' }}>
+                                                                    {c.maxMarks}
+                                                                </td>
+                                                                <td style={{ padding: '10px 16px', textAlign: 'center' }}>
+                                                                    <input
+                                                                        type="number"
+                                                                        value={c.marksObtained}
+                                                                        onChange={(e) => handleComponentChange(index, ci, e.target.value)}
+                                                                        min="0"
+                                                                        max={c.maxMarks}
+                                                                        step="0.5"
+                                                                        placeholder="0"
+                                                                        required
+                                                                        style={{
+                                                                            width: '100%',
+                                                                            maxWidth: '120px',
+                                                                            padding: '8px 12px',
+                                                                            border: '1px solid #d1d5db',
+                                                                            borderRadius: '6px',
+                                                                            fontSize: '0.9rem',
+                                                                            textAlign: 'center'
+                                                                        }}
+                                                                    />
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </React.Fragment>
+                                                );
+                                            })}
                                         </tbody>
                                     </table>
                                 </div>
@@ -239,7 +358,7 @@ function UploadMarksForm({ student, exams, onClose, onSuccess, existingResult = 
                                         Total:
                                     </span>
                                     <span style={{ fontSize: '1.1rem', fontWeight: '700', color: '#1f2937' }}>
-                                        {marksData.reduce((sum, s) => sum + (parseFloat(s.marksObtained) || 0), 0)} / {marksData.reduce((sum, s) => sum + parseFloat(s.maxMarks), 0)}
+                                        {marksData.reduce((sum, s) => sum + subjectObtainedTotal(s), 0)} / {marksData.reduce((sum, s) => sum + (parseFloat(s.maxMarks) || 0), 0)}
                                     </span>
                                 </div>
                             </div>

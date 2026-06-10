@@ -480,12 +480,36 @@ exports.calculatePendingFees = async (req, res) => {
 };
 
 // Exam Management
+// Validate that every subject carries a YYYY-MM-DD examDate; return the
+// earliest as the derived exam-level date (denormalized for the
+// class-examDate-index GSI). Returns { ok, message?, derivedExamDate? }.
+function validateAndDeriveExamDate(subjects) {
+    if (!Array.isArray(subjects) || subjects.length === 0) {
+        return { ok: false, message: 'At least one subject is required.' };
+    }
+    const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+    const dates = [];
+    for (const s of subjects) {
+        if (!s.examDate || !datePattern.test(s.examDate)) {
+            return { ok: false, message: `Subject "${s.name || '(unnamed)'}" needs a date (YYYY-MM-DD).` };
+        }
+        dates.push(s.examDate);
+    }
+    dates.sort();
+    return { ok: true, derivedExamDate: dates[0] };
+}
+
 exports.createExam = async (req, res) => {
     try {
-        const { examName, examType, class: className, subject, examDate, totalMarks, passingMarks, subjects } = req.body;
+        const { examName, examType, class: className, subject, totalMarks, passingMarks, subjects } = req.body;
 
-        if (!examName || !className || !examDate) {
+        if (!examName || !className) {
             return res.status(400).json(errorResponse('Missing required fields'));
+        }
+
+        const check = validateAndDeriveExamDate(subjects);
+        if (!check.ok) {
+            return res.status(400).json(errorResponse(check.message));
         }
 
         const exam = await ExamModel.create({
@@ -493,10 +517,10 @@ exports.createExam = async (req, res) => {
             examType: examType || 'MONTHLY',
             class: className,
             subject: subject || '',
-            examDate,
+            examDate: check.derivedExamDate,
             totalMarks: totalMarks || 0,
             passingMarks: passingMarks || 0,
-            subjects: subjects || [],
+            subjects: subjects,
             createdBy: req.user.userId
         });
 
@@ -554,7 +578,8 @@ exports.updateExam = async (req, res) => {
             return res.status(404).json(errorResponse('Exam not found'));
         }
 
-        const allowed = ['examName', 'examType', 'class', 'examDate', 'subjects', 'totalMarks'];
+        // examDate is derived from subjects, not directly editable.
+        const allowed = ['examName', 'examType', 'class', 'subjects', 'totalMarks'];
         const updates = {};
         for (const k of allowed) {
             if (req.body[k] !== undefined) updates[k] = req.body[k];
@@ -565,6 +590,15 @@ exports.updateExam = async (req, res) => {
         if (results && results.length > 0) {
             delete updates.subjects;
             delete updates.totalMarks;
+        }
+
+        // When subjects change, re-validate dates and re-derive exam.examDate.
+        if (updates.subjects) {
+            const check = validateAndDeriveExamDate(updates.subjects);
+            if (!check.ok) {
+                return res.status(400).json(errorResponse(check.message));
+            }
+            updates.examDate = check.derivedExamDate;
         }
 
         if (Object.keys(updates).length === 0) {

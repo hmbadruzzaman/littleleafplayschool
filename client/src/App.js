@@ -59,7 +59,7 @@ function AppRoutes() {
             />
 
             <Route
-                path="/marksheet/:studentId/:examId"
+                path="/marksheet/:studentId/:examIds"
                 element={
                     <ProtectedRoute allowedRoles={['ADMIN', 'TEACHER']}>
                         <MarkSheetPage />

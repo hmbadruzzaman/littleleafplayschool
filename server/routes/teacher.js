@@ -10,7 +10,7 @@ router.get('/exams', verifyToken, isAdminOrTeacher, teacherController.getAllExam
 router.get('/marks/:studentId', verifyToken, isAdminOrTeacher, teacherController.getStudentMarks);
 router.post('/marks', verifyToken, isAdminOrTeacher, teacherController.uploadMarks);
 router.get('/exams/:examId/results', verifyToken, isAdminOrTeacher, teacherController.getExamResults);
-router.get('/marksheet/:studentId/:examId', verifyToken, isAdminOrTeacher, teacherController.getMarkSheetBundle);
+router.get('/marksheet/:studentId/:examIds', verifyToken, isAdminOrTeacher, teacherController.getMarkSheetBundle);
 
 // Routes requiring teacher role only
 router.use(verifyToken, isTeacher);

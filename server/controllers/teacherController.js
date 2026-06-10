@@ -4,25 +4,22 @@ const ExamResultModel = require('../models/ExamResult');
 const { docClient, TABLES } = require('../config/dynamodb');
 const { successResponse, errorResponse } = require('../utils/helpers');
 
-// Bundle everything a printable mark sheet needs in one round-trip:
-// student, exam, the result for (student, exam), and the school info row.
+// Bundle everything a printable mark sheet needs in one round-trip. Accepts
+// one or more comma-separated exam IDs in the URL; returns the student and
+// schoolInfo once and a sheets[] array — one { exam, result } pair per
+// requested exam, preserving the requested order.
 exports.getMarkSheetBundle = async (req, res) => {
     try {
-        const { studentId, examId } = req.params;
+        const { studentId, examIds } = req.params;
+
+        const idList = (examIds || '').split(',').map(s => s.trim()).filter(Boolean);
+        if (idList.length === 0) {
+            return res.status(400).json(errorResponse('At least one examId is required'));
+        }
 
         const student = await StudentModel.findById(studentId);
         if (!student) {
             return res.status(404).json(errorResponse('Student not found'));
-        }
-
-        const exam = await ExamModel.findById(examId);
-        if (!exam) {
-            return res.status(404).json(errorResponse('Exam not found'));
-        }
-
-        const result = await ExamResultModel.getByStudentAndExam(studentId, examId);
-        if (!result) {
-            return res.status(404).json(errorResponse('No marks found for this student and exam'));
         }
 
         let schoolInfo = {};
@@ -37,11 +34,24 @@ exports.getMarkSheetBundle = async (req, res) => {
             console.warn('Could not load school info for mark sheet:', e?.message);
         }
 
+        const sheets = [];
+        for (const examId of idList) {
+            const exam = await ExamModel.findById(examId);
+            if (!exam) {
+                return res.status(404).json(errorResponse(`Exam not found: ${examId}`));
+            }
+            const result = await ExamResultModel.getByStudentAndExam(studentId, examId);
+            if (!result) {
+                return res.status(404).json(errorResponse(`No marks found for exam: ${exam.examName || examId}`));
+            }
+            sheets.push({ exam, result });
+        }
+
         // Drop the student's password if it's somehow there (defence in depth).
         const { password, ...safeStudent } = student;
 
         res.status(200).json(successResponse(
-            { student: safeStudent, exam, result, schoolInfo },
+            { student: safeStudent, schoolInfo, sheets },
             'Mark sheet bundle retrieved'
         ));
     } catch (error) {
@@ -125,7 +135,10 @@ exports.getAllExams = async (req, res) => {
     }
 };
 
-// Upload exam marks for a student (with subjects)
+// Upload exam marks for a student (with subjects, optionally with components).
+// For each subject that carries components, the server recomputes the
+// subject's marksObtained and maxMarks from the components — the client's
+// totals are treated as a preview, not authoritative.
 exports.uploadMarks = async (req, res) => {
     try {
         const { examId, studentId, subjects } = req.body;
@@ -140,9 +153,49 @@ exports.uploadMarks = async (req, res) => {
             return res.status(404).json(errorResponse('Exam not found'));
         }
 
-        // Calculate total marks
-        const totalMarksObtained = subjects.reduce((sum, s) => sum + parseFloat(s.marksObtained || 0), 0);
-        const totalMaxMarks = subjects.reduce((sum, s) => sum + parseFloat(s.maxMarks || 0), 0);
+        // Normalize each subject: validate ranges, recompute totals from components when present.
+        const normalizedSubjects = [];
+        for (const s of subjects) {
+            const hasComponents = Array.isArray(s.components) && s.components.length > 0;
+            if (hasComponents) {
+                let subjObtained = 0, subjMax = 0;
+                const normComponents = [];
+                for (const c of s.components) {
+                    const obtained = parseFloat(c.marksObtained || 0);
+                    const max      = parseFloat(c.maxMarks      || 0);
+                    if (isNaN(obtained) || isNaN(max) || obtained < 0 || obtained > max) {
+                        return res.status(400).json(errorResponse(
+                            `Invalid marks for ${s.name} · ${c.name}: must be between 0 and ${max}.`
+                        ));
+                    }
+                    subjObtained += obtained;
+                    subjMax      += max;
+                    normComponents.push({ name: c.name, marksObtained: obtained, maxMarks: max });
+                }
+                normalizedSubjects.push({
+                    name: s.name,
+                    marksObtained: subjObtained,
+                    maxMarks: subjMax,
+                    components: normComponents,
+                });
+            } else {
+                const obtained = parseFloat(s.marksObtained || 0);
+                const max      = parseFloat(s.maxMarks      || 0);
+                if (isNaN(obtained) || isNaN(max) || obtained < 0 || obtained > max) {
+                    return res.status(400).json(errorResponse(
+                        `Invalid marks for ${s.name}: must be between 0 and ${max}.`
+                    ));
+                }
+                normalizedSubjects.push({
+                    name: s.name,
+                    marksObtained: obtained,
+                    maxMarks: max,
+                });
+            }
+        }
+
+        const totalMarksObtained = normalizedSubjects.reduce((sum, s) => sum + s.marksObtained, 0);
+        const totalMaxMarks      = normalizedSubjects.reduce((sum, s) => sum + s.maxMarks,      0);
 
         // Check if result already exists
         const existingResult = await ExamResultModel.getByStudentAndExam(studentId, examId);
@@ -150,7 +203,7 @@ exports.uploadMarks = async (req, res) => {
         const resultData = {
             marksObtained: totalMarksObtained,
             totalMarks: totalMaxMarks,
-            subjects: subjects,
+            subjects: normalizedSubjects,
             uploadedBy: req.user.userId
         };
 

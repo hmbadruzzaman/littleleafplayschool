@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { adminAPI } from '../../services/api';
 import AddExamForm from '../../components/forms/AddExamForm';
+import { examEarliestDate, formatExamDateRange } from '../../utils/examDates';
 
 const CLASS_FILTERS = ['ALL', 'Play', 'Nursery', 'LKG', 'UKG'];
 
@@ -25,9 +26,10 @@ function ExamsSection() {
         setLoading(true);
         try {
             const res = await adminAPI.getAllExams();
-            // Sort newest first by examDate (string compare on YYYY-MM-DD works)
+            // Sort newest first by earliest subject date (falls back to legacy
+            // top-level examDate via examEarliestDate).
             const sorted = (res.data.data || []).slice().sort((a, b) =>
-                (b.examDate || '').localeCompare(a.examDate || '')
+                (examEarliestDate(b) || '').localeCompare(examEarliestDate(a) || '')
             );
             setExams(sorted);
             setError(null);
@@ -127,7 +129,7 @@ function ExamsSection() {
                                             {TYPE_LABEL[exam.examType] || exam.examType}
                                         </span>
                                         <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                                            {exam.class} · {exam.examDate}
+                                            {exam.class} · {formatExamDateRange(exam) || '—'}
                                         </span>
                                     </div>
                                     <div style={{ fontSize: 12, color: 'var(--text-light)', lineHeight: 1.5 }}>

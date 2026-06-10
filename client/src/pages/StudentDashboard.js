@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { studentAPI } from '../services/api';
 import LeafMark from '../components/common/LeafMark';
+import { formatExamDateRange } from '../utils/examDates';
 import './Dashboard.css';
 
 function StudentDashboard() {
@@ -122,7 +123,7 @@ function StudentDashboard() {
                                     {nextExam.subject ? <> <span className="ll-student-card__title-sep">—</span> {nextExam.subject}</> : null}
                                 </div>
                                 <div className="ll-student-card__meta">
-                                    {formatDate(nextExam.examDate)}
+                                    {formatExamDateRange(nextExam) || formatDate(nextExam.examDate)}
                                     {nextExam.examTime ? ` · ${nextExam.examTime}` : ''}
                                 </div>
                                 {nextExam.subject && (
@@ -201,11 +202,25 @@ function StudentDashboard() {
                                             </div>
                                             {r.subjects && r.subjects.length > 0 && (
                                                 <div className="ll-marks__subjects">
-                                                    {r.subjects.map((s, si) => (
-                                                        <span key={si} className="ll-marks__subject-chip">
-                                                            {s.name} <strong>{s.marksObtained}/{s.maxMarks}</strong>
-                                                        </span>
-                                                    ))}
+                                                    {r.subjects.map((s, si) => {
+                                                        const hasComps = Array.isArray(s.components) && s.components.length > 0;
+                                                        return (
+                                                            <div key={si} className="ll-marks__subject-group">
+                                                                <span className="ll-marks__subject-chip">
+                                                                    {s.name} <strong>{s.marksObtained}/{s.maxMarks}</strong>
+                                                                </span>
+                                                                {hasComps && (
+                                                                    <div className="ll-marks__components">
+                                                                        {s.components.map((c, ci) => (
+                                                                            <span key={ci} className="ll-marks__component-chip">
+                                                                                {c.name} <strong>{c.marksObtained}/{c.maxMarks}</strong>
+                                                                            </span>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
                                             )}
                                         </div>
