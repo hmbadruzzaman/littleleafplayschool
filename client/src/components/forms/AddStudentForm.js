@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
 import './Forms.css';
 
+// Default password = lowercase first word of the student's full name + "123",
+// so each student gets a distinct sensible password (e.g., "Aarav Sharma" → "aarav123").
+function defaultPasswordFor(fullName) {
+    const first = (fullName || '').trim().split(/\s+/)[0] || '';
+    return first ? `${first.toLowerCase()}123` : '';
+}
+
 function AddStudentForm({ onClose, onSuccess }) {
     const [formData, setFormData] = useState({
         fullName: '',
@@ -11,12 +18,15 @@ function AddStudentForm({ onClose, onSuccess }) {
         address: '',
         admissionDate: '',
         class: 'Play',
-        password: 'password123',
+        password: '',
         status: 'ACTIVE',
         transportEnabled: false,
         transportStartMonth: '',
         excludeAdmissionFee: false
     });
+    // Tracks whether admin has manually typed in the password field. Once they
+    // have, we stop auto-syncing from fullName.
+    const [passwordTouched, setPasswordTouched] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [showSuccess, setShowSuccess] = useState(false);
@@ -24,10 +34,15 @@ function AddStudentForm({ onClose, onSuccess }) {
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: type === 'checkbox' ? checked : value
-        }));
+        const newValue = type === 'checkbox' ? checked : value;
+        setFormData(prev => {
+            const next = { ...prev, [name]: newValue };
+            if (name === 'fullName' && !passwordTouched) {
+                next.password = defaultPasswordFor(value);
+            }
+            return next;
+        });
+        if (name === 'password') setPasswordTouched(true);
     };
 
     const handleSubmit = async (e) => {
@@ -234,7 +249,7 @@ function AddStudentForm({ onClose, onSuccess }) {
                                 name="password"
                                 value={formData.password}
                                 onChange={handleChange}
-                                placeholder="Login password for student"
+                                placeholder="Auto-filled from student's first name (e.g., aarav123)"
                                 required
                             />
                         </div>
