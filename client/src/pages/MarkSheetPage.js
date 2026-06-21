@@ -88,15 +88,19 @@ function MarkSheetPage() {
                     </div>
                     <div className="ll-marksheet__school">
                         <div className="ll-marksheet__school-name">{schoolName}</div>
-                        {schoolInfo?.address && (
-                            <div className="ll-marksheet__school-line">{schoolInfo.address}</div>
-                        )}
-                        {(schoolInfo?.phone || schoolInfo?.email) && (
-                            <div className="ll-marksheet__school-line">
-                                {[schoolInfo.phone, schoolInfo.email].filter(Boolean).join(' · ')}
-                            </div>
-                        )}
                     </div>
+                    {(schoolInfo?.address || schoolInfo?.phone || schoolInfo?.email || schoolInfo?.website) && (
+                        <div className="ll-marksheet__contact">
+                            {schoolInfo?.address && (
+                                <div className="ll-marksheet__contact-line">{schoolInfo.address}</div>
+                            )}
+                            {(schoolInfo?.phone || schoolInfo?.email) && (
+                                <div className="ll-marksheet__contact-line">
+                                    {[schoolInfo.phone, schoolInfo.email].filter(Boolean).join(' · ')}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 <hr className="ll-marksheet__divider" />
@@ -181,7 +185,7 @@ function ExamBlock({ exam, result, scale }) {
                         const hasComps = Array.isArray(s.components) && s.components.length > 0;
                         return (
                             <React.Fragment key={i}>
-                                <tr className={hasComps ? 'll-marksheet__subject-row' : ''}>
+                                <tr className="ll-marksheet__subject-row">
                                     <td>{s.name}</td>
                                     {showDateCol && <td>{formatDate(dateForSubject(s.name))}</td>}
                                     <td className="num">{s.marksObtained}</td>

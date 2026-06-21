@@ -9,6 +9,7 @@
     "dev:local": "USE_LOCAL_DB=true nodemon server.js",
     "create-tables": "node scripts/create-tables.js",
     "seed-admin": "node scripts/seed-admin.js",
+    "restore-backup": "node scripts/restore-from-backup.js",
     "seed-dummy": "node scripts/seed-dummy-data.js",
     "seed-dummy:local": "USE_LOCAL_DB=true node scripts/seed-dummy-data.js",
     "setup": "npm run create-tables && npm run seed-admin",
