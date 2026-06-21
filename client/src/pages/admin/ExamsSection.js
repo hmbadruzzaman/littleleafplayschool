@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { adminAPI } from '../../services/api';
 import AddExamForm from '../../components/forms/AddExamForm';
+import GradeScaleModal from '../../components/modals/GradeScaleModal';
 import { examEarliestDate, formatExamDateRange } from '../../utils/examDates';
 
 const CLASS_FILTERS = ['ALL', 'Play', 'Nursery', 'LKG', 'UKG'];
@@ -19,6 +20,7 @@ function ExamsSection() {
     const [filterClass, setFilterClass]   = useState('ALL');
     const [showAdd, setShowAdd]           = useState(false);
     const [editing, setEditing]           = useState(null); // exam being edited
+    const [showGradeScale, setShowGradeScale] = useState(false);
 
     useEffect(() => { fetchExams(); }, []);
 
@@ -75,9 +77,14 @@ function ExamsSection() {
                         <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 400, color: 'var(--forest-900)', margin: 0 }}>
                             Exams
                         </h2>
-                        <button onClick={() => setShowAdd(true)} className="btn btn-primary" style={{ fontSize: 13 }}>
-                            + Add Exam
-                        </button>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                            <button onClick={() => setShowGradeScale(true)} className="btn btn-ghost" style={{ fontSize: 13 }}>
+                                Grade Scale
+                            </button>
+                            <button onClick={() => setShowAdd(true)} className="btn btn-primary" style={{ fontSize: 13 }}>
+                                + Add Exam
+                            </button>
+                        </div>
                     </div>
                     {/* Class filter pills */}
                     <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
@@ -168,6 +175,10 @@ function ExamsSection() {
                     onClose={() => setEditing(null)}
                     onSuccess={fetchExams}
                 />
+            )}
+
+            {showGradeScale && (
+                <GradeScaleModal onClose={() => setShowGradeScale(false)} />
             )}
         </div>
     );

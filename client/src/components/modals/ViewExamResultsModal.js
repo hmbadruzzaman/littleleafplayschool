@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import UploadMarksForm from '../forms/UploadMarksForm';
 import { adminAPI } from '../../services/api';
 import { formatExamDateRange, formatDate, subjectDate, examHasPerSubjectDates } from '../../utils/examDates';
+import { DEFAULT_GRADE_SCALE, normalizeScale, gradeForPercentage } from '../../utils/grades';
 import './Modals.css';
 
 function ViewExamResultsModal({ student, onClose }) {
@@ -11,6 +12,7 @@ function ViewExamResultsModal({ student, onClose }) {
     const [error, setError] = useState('');
     const [marksTarget, setMarksTarget] = useState(null); // { exam, existingResult|null }
     const [selectedExamIds, setSelectedExamIds] = useState([]);
+    const [gradeScale, setGradeScale] = useState(DEFAULT_GRADE_SCALE);
 
     const MAX_SHEETS = 4;
 
@@ -61,6 +63,12 @@ function ViewExamResultsModal({ student, onClose }) {
 
             if (marksData.success) {
                 setMarks(marksData.data || []);
+            }
+            try {
+                const infoRes = await adminAPI.getSchoolInfo();
+                setGradeScale(normalizeScale(infoRes?.data?.data?.gradeScale));
+            } catch (e) {
+                // Keep the default scale if school info can't be loaded.
             }
         } catch (err) {
             setError('Error fetching data');
@@ -233,7 +241,12 @@ function ViewExamResultsModal({ student, onClose }) {
                                                                         <tr style={{ fontWeight: '600', backgroundColor: '#f9fafb' }}>
                                                                             <td style={{ padding: '8px' }}>Grade</td>
                                                                             <td style={{ padding: '8px', textAlign: 'center' }} colSpan={showDateCol ? 3 : 2}>
-                                                                                <span className="status-badge active">{examMarks.grade}</span>
+                                                                                {(() => {
+                                                                                    const obtained = examMarks.subjects.reduce((sum, s) => sum + (parseInt(s.marksObtained) || 0), 0);
+                                                                                    const max = examMarks.subjects.reduce((sum, s) => sum + (parseInt(s.maxMarks) || 0), 0);
+                                                                                    const pct = max > 0 ? Math.round((obtained / max) * 100) : 0;
+                                                                                    return <span className="status-badge active">{gradeForPercentage(pct, gradeScale)}</span>;
+                                                                                })()}
                                                                             </td>
                                                                         </tr>
                                                                     </tbody>

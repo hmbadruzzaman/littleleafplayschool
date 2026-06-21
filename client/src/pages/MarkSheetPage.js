@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { teacherAPI } from '../services/api';
 import LeafMark from '../components/common/LeafMark';
 import { formatExamDateRange, formatDate, subjectDate, examHasPerSubjectDates } from '../utils/examDates';
+import { normalizeScale, gradeForPercentage, gradeBandRangeLabel } from '../utils/grades';
 import './MarkSheetPage.css';
 
 const EXAM_TYPE_LABEL = {
@@ -74,6 +75,7 @@ function MarkSheetPage() {
     // hand-crafted URLs. Anything past the cap is dropped silently.
     const sheets = (rawSheets || []).slice(0, 4);
     const schoolName = schoolInfo?.schoolName || 'Little Leaf Play School';
+    const gradeScale = normalizeScale(schoolInfo?.gradeScale);
 
     return (
         <div className="ll-marksheet-page">
@@ -111,7 +113,17 @@ function MarkSheetPage() {
                     the number of sheets (1 / 2 / 3 / 4). */}
                 <div className={`ll-marksheet__exams ll-marksheet__exams--${sheets.length}`}>
                     {sheets.map((sheet, i) => (
-                        <ExamBlock key={i} exam={sheet.exam} result={sheet.result} />
+                        <ExamBlock key={i} exam={sheet.exam} result={sheet.result} scale={gradeScale} />
+                    ))}
+                </div>
+
+                {/* Grade legend — rendered once for the whole sheet */}
+                <div className="ll-marksheet__legend">
+                    <span className="ll-marksheet__legend-title">Grading</span>
+                    {gradeScale.map((band, i) => (
+                        <span key={band.label} className="ll-marksheet__legend-item">
+                            <strong>{band.label}</strong> {gradeBandRangeLabel(gradeScale, i)}
+                        </span>
                     ))}
                 </div>
 
@@ -133,7 +145,7 @@ function MarkSheetPage() {
     );
 }
 
-function ExamBlock({ exam, result }) {
+function ExamBlock({ exam, result, scale }) {
     const examTypeLabel = EXAM_TYPE_LABEL[exam.examType] || exam.examType;
     const subjects = result?.subjects || [];
     const totalObtained = subjects.reduce((s, x) => s + (Number(x.marksObtained) || 0), 0);
@@ -197,12 +209,10 @@ function ExamBlock({ exam, result }) {
                         <td className="num">{totalMax}</td>
                         <td className="num">{totalPct}%</td>
                     </tr>
-                    {result?.grade && (
-                        <tr className="ll-marksheet__grade-row">
-                            <td>Grade</td>
-                            <td className="num" colSpan={colCount - 1}>{result.grade}</td>
-                        </tr>
-                    )}
+                    <tr className="ll-marksheet__grade-row">
+                        <td>Grade</td>
+                        <td className="num" colSpan={colCount - 1}>{gradeForPercentage(totalPct, scale)}</td>
+                    </tr>
                 </tfoot>
             </table>
         </div>
