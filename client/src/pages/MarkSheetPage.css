@@ -263,7 +263,9 @@
 
 .ll-marksheet__total-row td {
     font-weight: 700;
-    background: #fbf8f0;
+    background: #e7ecd9;
+    color: #2a3a25;
+    border-top: 1.5px solid #c4cfae;
 }
 
 .ll-marksheet__grade-row td {
