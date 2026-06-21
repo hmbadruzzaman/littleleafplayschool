@@ -355,7 +355,10 @@
 
 @page {
     size: A4;
-    margin: 12mm;
+    /* margin:0 removes the page-margin band the browser uses to print its own
+       date/time and URL headers & footers — with no margin there's nowhere for
+       them to render. The 12mm "margin" is recreated via padding below. */
+    margin: 0;
 }
 
 @media print {
@@ -375,7 +378,8 @@
     }
     .ll-marksheet-page {
         background: #ffffff;
-        padding: 0;
+        /* Recreate the 12mm page margin as padding now that @page margin is 0. */
+        padding: 12mm;
         min-height: 0;
     }
     .ll-marksheet {
