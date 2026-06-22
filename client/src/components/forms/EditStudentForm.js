@@ -15,7 +15,9 @@ function EditStudentForm({ student, onClose, onSuccess }) {
         password: '',
         transportEnabled: student.transportEnabled || false,
         transportStartMonth: student.transportStartMonth || '',
-        excludeAdmissionFee: student.excludeAdmissionFee || false
+        excludeAdmissionFee: student.excludeAdmissionFee || false,
+        monthlyFeeDiscount: student.monthlyFeeDiscount || 0,
+        transportFeeDiscount: student.transportFeeDiscount || 0
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -252,6 +254,36 @@ function EditStudentForm({ student, onClose, onSuccess }) {
                             />
                             <small style={{color: '#6b7280', fontSize: '0.85rem'}}>
                                 Select the month from which transport fees should be calculated
+                            </small>
+                        </div>
+                    )}
+
+                    <div className="form-group">
+                        <label>Monthly Fee Discount (₹)</label>
+                        <input
+                            type="number"
+                            name="monthlyFeeDiscount"
+                            min="0"
+                            value={formData.monthlyFeeDiscount}
+                            onChange={handleChange}
+                        />
+                        <small style={{color: '#6b7280', fontSize: '0.85rem'}}>
+                            Flat amount subtracted from the monthly fee each month (default 0)
+                        </small>
+                    </div>
+
+                    {formData.transportEnabled && (
+                        <div className="form-group">
+                            <label>Transport Fee Discount (₹)</label>
+                            <input
+                                type="number"
+                                name="transportFeeDiscount"
+                                min="0"
+                                value={formData.transportFeeDiscount}
+                                onChange={handleChange}
+                            />
+                            <small style={{color: '#6b7280', fontSize: '0.85rem'}}>
+                                Flat amount subtracted from the transport fee each month (default 0)
                             </small>
                         </div>
                     )}

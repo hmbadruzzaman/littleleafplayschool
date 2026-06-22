@@ -105,6 +105,14 @@ async function calculatePendingFeesForStudent(student) {
             }
 
             const currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+            // Resolve the per-student discount for this fee type (flat ₹/month).
+            let feeDiscount = 0;
+            if (structure.feeType === 'MONTHLY_FEE') {
+                feeDiscount = parseFloat(student.monthlyFeeDiscount) || 0;
+            } else if (structure.feeType === 'TRANSPORT_FEE') {
+                feeDiscount = parseFloat(student.transportFeeDiscount) || 0;
+            }
+            const effectiveAmount = Math.max(0, structure.amount - feeDiscount);
             let monthPending = 0;
             const months = [];
 
@@ -146,7 +154,7 @@ async function calculatePendingFeesForStudent(student) {
                         .filter(f => f.paymentStatus === 'PENDING')
                         .reduce((sum, f) => sum + parseFloat(f.amount || 0), 0);
 
-                    const amountDue = structure.amount;
+                    const amountDue = effectiveAmount;
 
                     if (pendingThisMonth >= amountDue) {
                         monthlyPending = 0;
@@ -171,6 +179,8 @@ async function calculatePendingFeesForStudent(student) {
                 pendingBreakdown.push({
                     feeType: structure.feeType,
                     structureAmount: structure.amount,
+                    discount: feeDiscount,
+                    effectiveAmount,
                     pendingAmount: monthPending,
                     frequency: 'MONTHLY',
                     months
