@@ -158,7 +158,23 @@ function ViewFeeDetailsModal({ student, onClose }) {
                                                                 {item.frequency === 'ONE_TIME' ? 'One Time' : 'Monthly'}
                                                             </span>
                                                         </td>
-                                                        <td>₹{parseFloat(item.structureAmount || 0).toFixed(2)}</td>
+                                                        <td>
+                                                            {item.discount > 0 ? (
+                                                                <>
+                                                                    <span style={{ textDecoration: 'line-through', color: '#9ca3af' }}>
+                                                                        ₹{parseFloat(item.structureAmount || 0).toFixed(2)}
+                                                                    </span>
+                                                                    <br />
+                                                                    <span style={{ color: '#059669', fontSize: '0.85rem' }}>
+                                                                        − ₹{parseFloat(item.discount || 0).toFixed(2)} discount
+                                                                    </span>
+                                                                    <br />
+                                                                    <strong>₹{parseFloat(item.effectiveAmount || 0).toFixed(2)}</strong>
+                                                                </>
+                                                            ) : (
+                                                                <>₹{parseFloat(item.structureAmount || 0).toFixed(2)}</>
+                                                            )}
+                                                        </td>
                                                         <td>
                                                             <strong style={{ color: '#dc2626' }}>
                                                                 ₹{parseFloat(item.pendingAmount || 0).toFixed(2)}
