@@ -24,6 +24,9 @@ router.get('/students/:studentId/fees', adminController.getStudentFees);
 router.get('/students/:studentId/pending-fees', adminController.calculatePendingFees);
 router.post('/students/:studentId/quick-pay/preview', adminController.quickPayPreview);
 router.post('/students/:studentId/quick-pay', adminController.quickPay);
+router.get('/students/:studentId/item-charges', adminController.getItemCharges);
+router.post('/students/:studentId/item-charges', adminController.createItemCharge);
+router.delete('/students/:studentId/item-charges/:itemId', adminController.deleteItemCharge);
 
 // Fee structure management
 router.post('/fee-structure', adminController.createFeeStructure);

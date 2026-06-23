@@ -68,3 +68,29 @@ test('allocations carry PAID status and payment metadata', () => {
   assert.strictEqual(row.paymentDate, '2026-03-15');
   assert.strictEqual(row.rollNumber, 'R1');
 });
+
+test('item units are paid after structured dues with kind ITEM and itemRemainingAfter', () => {
+  const u = [
+    { kind: 'STRUCTURE', feeType: 'MONTHLY_FEE', frequency: 'MONTHLY', month: 'January', year: 2026, academicYear: '2026', remaining: 3000, label: 'Monthly Fee — January 2026' },
+    { kind: 'ITEM', feeType: 'OTHER', frequency: 'ITEM', feeId: 'F1', itemId: 'I1', itemName: 'Books', remaining: 500, label: 'Books' },
+  ];
+  // 3200 fully pays the month (3000) and partially pays the item (200 of 500).
+  const r = allocate(u, 3200, META);
+  assert.strictEqual(r.allocations.length, 2);
+  assert.strictEqual(r.allocations[0].kind, 'STRUCTURE');
+  const item = r.allocations[1];
+  assert.strictEqual(item.kind, 'ITEM');
+  assert.strictEqual(item.feeId, 'F1');
+  assert.strictEqual(item.itemId, 'I1');
+  assert.strictEqual(item.amount, 200);
+  assert.strictEqual(item.itemRemainingAfter, 300);
+  // The dated income row for an item payment is always PAID.
+  assert.strictEqual(item.paymentStatus, 'PAID');
+});
+
+test('fully paying an item sets itemRemainingAfter to 0', () => {
+  const u = [{ kind: 'ITEM', feeType: 'OTHER', frequency: 'ITEM', feeId: 'F1', itemId: 'I1', itemName: 'Books', remaining: 500, label: 'Books' }];
+  const r = allocate(u, 500, META);
+  assert.strictEqual(r.allocations[0].itemRemainingAfter, 0);
+  assert.strictEqual(r.allocations[0].paymentStatus, 'PAID');
+});

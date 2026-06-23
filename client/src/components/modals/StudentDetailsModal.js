@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { adminAPI } from '../../services/api';
 import RecordFeePaymentForm from '../forms/RecordFeePaymentForm';
 import EditStudentForm from '../forms/EditStudentForm';
 import ViewFeeDetailsModal from './ViewFeeDetailsModal';
@@ -17,8 +18,73 @@ function StudentDetailsModal({ student, onClose, onUpdate }) {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+    const [items, setItems] = useState([]);
+    const [itemsLoading, setItemsLoading] = useState(true);
+    const [showAddItem, setShowAddItem] = useState(false);
+    const [itemForm, setItemForm] = useState({ itemName: '', amountPaid: '', amountPending: '', paymentMethod: 'CASH' });
+    const [itemError, setItemError] = useState('');
+    const [savingItem, setSavingItem] = useState(false);
+
+    useEffect(() => {
+        if (student?.studentId) fetchItems();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [student?.studentId]);
 
     if (!student) return null;
+
+    const fmtItem = n => '₹' + Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 });
+
+    const fetchItems = async () => {
+        setItemsLoading(true);
+        try {
+            const res = await adminAPI.getItemCharges(student.studentId);
+            if (res.data.success) setItems(res.data.data.items || []);
+        } catch (err) {
+            console.error('Error fetching item charges:', err);
+        } finally {
+            setItemsLoading(false);
+        }
+    };
+
+    const handleAddItem = async (e) => {
+        e.preventDefault();
+        const paid = parseFloat(itemForm.amountPaid) || 0;
+        const pending = parseFloat(itemForm.amountPending) || 0;
+        if (!itemForm.itemName.trim()) { setItemError('Item name is required'); return; }
+        if (paid <= 0 && pending <= 0) { setItemError('Enter a paid and/or pending amount'); return; }
+        setSavingItem(true);
+        setItemError('');
+        try {
+            const res = await adminAPI.createItemCharge(student.studentId, {
+                itemName: itemForm.itemName.trim(),
+                amountPaid: paid,
+                amountPending: pending,
+                paymentMethod: itemForm.paymentMethod,
+            });
+            if (res.data.success) {
+                setItemForm({ itemName: '', amountPaid: '', amountPending: '', paymentMethod: 'CASH' });
+                setShowAddItem(false);
+                await fetchItems();
+                if (onUpdate) onUpdate();
+            } else {
+                setItemError(res.data.message || 'Failed to add item charge');
+            }
+        } catch (err) {
+            setItemError(err.response?.data?.message || 'Failed to add item charge');
+        } finally {
+            setSavingItem(false);
+        }
+    };
+
+    const handleDeleteItem = async (itemId) => {
+        try {
+            await adminAPI.deleteItemCharge(student.studentId, itemId);
+            await fetchItems();
+            if (onUpdate) onUpdate();
+        } catch (err) {
+            console.error('Error deleting item charge:', err);
+        }
+    };
 
     const handlePaymentSuccess = () => {
         setShowRecordPayment(false);
@@ -185,6 +251,91 @@ function StudentDetailsModal({ student, onClose, onUpdate }) {
                             <small style={{color: '#6b7280', fontSize: '0.85rem', display: 'block', marginTop: '8px'}}>
                                 Students use their roll number and password to log in to the student portal
                             </small>
+                        </div>
+
+                        <div className="details-section">
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <h3 style={{ margin: 0 }}>Other Charges</h3>
+                                <button className="btn btn-primary" style={{ fontSize: 13 }}
+                                    onClick={() => { setShowAddItem(v => !v); setItemError(''); }}>
+                                    {showAddItem ? 'Cancel' : '+ Add charge'}
+                                </button>
+                            </div>
+                            <small style={{ color: '#6b7280', fontSize: '0.85rem', display: 'block', margin: '4px 0 12px' }}>
+                                Ad-hoc items (books, dress, etc.). Pending amounts roll into the student’s dues and are payable via Quick Pay.
+                            </small>
+
+                            {showAddItem && (
+                                <form onSubmit={handleAddItem} style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8, padding: 12, marginBottom: 12 }}>
+                                    {itemError && <div className="error-message" style={{ marginBottom: 8 }}>{itemError}</div>}
+                                    <div className="form-group">
+                                        <label>Item Name *</label>
+                                        <input type="text" value={itemForm.itemName}
+                                            onChange={e => setItemForm(f => ({ ...f, itemName: e.target.value }))}
+                                            placeholder="e.g., Books, Dress" />
+                                    </div>
+                                    <div className="form-row">
+                                        <div className="form-group">
+                                            <label>Amount Paid (₹)</label>
+                                            <input type="number" min="0" step="0.01" value={itemForm.amountPaid}
+                                                onChange={e => setItemForm(f => ({ ...f, amountPaid: e.target.value }))}
+                                                placeholder="0" />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Amount Pending (₹)</label>
+                                            <input type="number" min="0" step="0.01" value={itemForm.amountPending}
+                                                onChange={e => setItemForm(f => ({ ...f, amountPending: e.target.value }))}
+                                                placeholder="0" />
+                                        </div>
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Payment Method (for paid part)</label>
+                                        <select value={itemForm.paymentMethod}
+                                            onChange={e => setItemForm(f => ({ ...f, paymentMethod: e.target.value }))}>
+                                            <option value="CASH">Cash</option>
+                                            <option value="CARD">Card</option>
+                                            <option value="UPI">UPI</option>
+                                            <option value="NET_BANKING">Net Banking</option>
+                                            <option value="CHEQUE">Cheque</option>
+                                        </select>
+                                    </div>
+                                    <div className="form-actions">
+                                        <button type="submit" className="btn btn-primary" disabled={savingItem}>
+                                            {savingItem ? 'Saving…' : 'Add charge'}
+                                        </button>
+                                    </div>
+                                </form>
+                            )}
+
+                            {itemsLoading ? (
+                                <p style={{ color: '#6b7280', fontSize: '0.9rem' }}>Loading…</p>
+                            ) : items.length === 0 ? (
+                                <p style={{ color: '#6b7280', fontSize: '0.9rem' }}>No item charges yet.</p>
+                            ) : (
+                                <table className="data-table">
+                                    <thead>
+                                        <tr><th>Item</th><th>Paid</th><th>Pending</th><th></th></tr>
+                                    </thead>
+                                    <tbody>
+                                        {items.map(it => (
+                                            <tr key={it.itemId}>
+                                                <td><strong>{it.itemName}</strong></td>
+                                                <td>{fmtItem(it.paid)}</td>
+                                                <td style={{ color: it.pending > 0 ? '#dc2626' : 'inherit', fontWeight: it.pending > 0 ? 600 : 400 }}>
+                                                    {fmtItem(it.pending)}
+                                                </td>
+                                                <td>
+                                                    <button className="btn btn-danger btn-sm"
+                                                        onClick={() => handleDeleteItem(it.itemId)}
+                                                        style={{ background: '#ef4444', color: 'white', border: 'none' }}>
+                                                        ×
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            )}
                         </div>
 
                         <div className="details-section">

@@ -135,8 +135,24 @@ function computePendingUnits({ student, feeStructures, studentFees, today }) {
     return (FEE_TYPE_PRIORITY[a.feeType] ?? 9) - (FEE_TYPE_PRIORITY[b.feeType] ?? 9);
   });
 
-  // Strip the internal sort field before returning.
-  return [...oneTimeUnits, ...monthlyUnits].map(({ monthIndex, ...u }) => u);
+  // Ad-hoc item charges: one ITEM unit per OTHER PENDING row, sorted by name, last.
+  const itemUnits = studentFees
+    .filter(f => f.feeType === 'OTHER' && f.paymentStatus === 'PENDING' && (parseFloat(f.amount) || 0) > 0)
+    .map(f => ({
+      kind: 'ITEM',
+      feeType: 'OTHER',
+      frequency: 'ITEM',
+      feeId: f.feeId,
+      itemId: f.itemId,
+      itemName: f.itemName,
+      remaining: parseFloat(f.amount) || 0,
+      label: f.itemName || 'Other charge',
+    }))
+    .sort((a, b) => String(a.itemName).localeCompare(String(b.itemName)));
+
+  // Strip the internal sort field; tag structured units so consumers can branch on kind.
+  const structured = [...oneTimeUnits, ...monthlyUnits].map(({ monthIndex, ...u }) => ({ kind: 'STRUCTURE', ...u }));
+  return [...structured, ...itemUnits];
 }
 
 /** Async wrapper: fetch fee structures + student fees, then compute units. */
@@ -156,9 +172,17 @@ function groupUnitsToBreakdown(units) {
   const oneTime = [];
   const monthlyByType = new Map();
 
+  const items = [];
   for (const u of units) {
     totalPending += u.remaining;
-    if (u.frequency === 'ONE_TIME') {
+    if (u.frequency === 'ITEM') {
+      items.push({
+        feeType: u.feeType,
+        frequency: 'ITEM',
+        itemName: u.itemName,
+        pendingAmount: u.remaining,
+      });
+    } else if (u.frequency === 'ONE_TIME') {
       oneTime.push({
         feeType: u.feeType,
         structureAmount: u.structureAmount,
@@ -182,7 +206,7 @@ function groupUnitsToBreakdown(units) {
     }
   }
 
-  return { totalPending, breakdown: [...oneTime, ...monthlyByType.values()] };
+  return { totalPending, breakdown: [...oneTime, ...monthlyByType.values(), ...items] };
 }
 
 async function calculatePendingFeesForStudent(student) {
@@ -195,4 +219,5 @@ module.exports = {
   computePendingUnits,
   getPendingUnits,
   calculatePendingFeesForStudent,
+  groupUnitsToBreakdown,
 };

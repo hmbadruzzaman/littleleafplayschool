@@ -17,15 +17,19 @@ function allocate(units, amount, meta = {}) {
     const pay = Math.min(left, u.remaining);
     if (pay <= 0) continue;
 
+    const isItem = u.kind === 'ITEM';
     const dueDate = u.frequency === 'MONTHLY'
       ? `${u.year}-${String(monthNumber(u.month)).padStart(2, '0')}-01`
       : (meta.paymentDate || new Date().toISOString().split('T')[0]);
 
-    const paymentStatus = pay < u.remaining ? 'PENDING' : 'PAID';
+    // A partial structured line stays PENDING to keep its balance visible. An item
+    // payment is always a PAID income row; the owed PENDING row is shrunk on commit.
+    const paymentStatus = isItem ? 'PAID' : (pay < u.remaining ? 'PENDING' : 'PAID');
 
-    allocations.push({
+    const allocation = {
       feeType: u.feeType,
       frequency: u.frequency,
+      kind: isItem ? 'ITEM' : 'STRUCTURE',
       month: u.month,
       year: u.year,
       academicYear: u.academicYear,
@@ -37,7 +41,14 @@ function allocate(units, amount, meta = {}) {
       paymentMethod: meta.paymentMethod || 'CASH',
       remarks: meta.remarks || '',
       rollNumber: meta.rollNumber,
-    });
+    };
+    if (isItem) {
+      allocation.feeId = u.feeId;
+      allocation.itemId = u.itemId;
+      allocation.itemName = u.itemName;
+      allocation.itemRemainingAfter = u.remaining - pay;
+    }
+    allocations.push(allocation);
     left -= pay;
   }
 

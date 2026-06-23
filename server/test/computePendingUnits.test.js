@@ -123,3 +123,43 @@ test('one-time PAID record settles the fee fully (not returned)', () => {
   });
   assert.ok(!units.some(u => u.feeType === 'ADMISSION_FEE'));
 });
+
+test('emits an ITEM unit per OTHER PENDING row, ordered after structured units', () => {
+  const units = computePendingUnits({
+    student: baseStudent(),
+    feeStructures: STRUCTURES,
+    studentFees: [
+      { feeId: 'F1', feeType: 'OTHER', itemId: 'I2', itemName: 'Dress', amount: 450, paymentStatus: 'PENDING' },
+      { feeId: 'F2', feeType: 'OTHER', itemId: 'I1', itemName: 'Books', amount: 100, paymentStatus: 'PENDING' },
+      { feeId: 'F3', feeType: 'OTHER', itemId: 'I1', itemName: 'Books', amount: 200, paymentStatus: 'PAID' },
+    ],
+    today: TODAY,
+  });
+  const items = units.filter(u => u.kind === 'ITEM');
+  // Both pending item rows become units; the PAID OTHER row does not.
+  assert.deepStrictEqual(items.map(u => [u.itemName, u.remaining, u.feeId]), [
+    ['Books', 100, 'F2'],
+    ['Dress', 450, 'F1'],
+  ]);
+  // Items come after every structured (non-ITEM) unit.
+  const lastStructuredIdx = units.map(u => u.kind).lastIndexOf('STRUCTURE');
+  const firstItemIdx = units.findIndex(u => u.kind === 'ITEM');
+  assert.ok(firstItemIdx > lastStructuredIdx);
+});
+
+test('ITEM unit carries kind, feeId and label', () => {
+  const units = computePendingUnits({
+    student: baseStudent(),
+    feeStructures: STRUCTURES,
+    studentFees: [
+      { feeId: 'F9', feeType: 'OTHER', itemId: 'I9', itemName: 'Lab kit', amount: 700, paymentStatus: 'PENDING' },
+    ],
+    today: TODAY,
+  });
+  const item = units.find(u => u.kind === 'ITEM');
+  assert.strictEqual(item.feeId, 'F9');
+  assert.strictEqual(item.frequency, 'ITEM');
+  assert.strictEqual(item.feeType, 'OTHER');
+  assert.strictEqual(item.label, 'Lab kit');
+  assert.strictEqual(item.remaining, 700);
+});

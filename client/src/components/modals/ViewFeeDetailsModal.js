@@ -152,14 +152,14 @@ function ViewFeeDetailsModal({ student, onClose }) {
                                                 {pendingData.breakdown.map((item, index) => (
                                                     <tr key={index}>
                                                         <td>
-                                                            <strong>{item.feeType.replace(/_/g, ' ')}</strong>
+                                                            <strong>{item.frequency === 'ITEM' ? item.itemName : item.feeType.replace(/_/g, ' ')}</strong>
                                                         </td>
                                                         <td>
                                                             <span className="status-badge" style={{
-                                                                backgroundColor: item.frequency === 'ONE_TIME' ? '#dbeafe' : '#fef3c7',
-                                                                color: item.frequency === 'ONE_TIME' ? '#1e40af' : '#92400e'
+                                                                backgroundColor: item.frequency === 'ITEM' ? '#ede9fe' : item.frequency === 'ONE_TIME' ? '#dbeafe' : '#fef3c7',
+                                                                color: item.frequency === 'ITEM' ? '#5b21b6' : item.frequency === 'ONE_TIME' ? '#1e40af' : '#92400e'
                                                             }}>
-                                                                {item.frequency === 'ONE_TIME' ? 'One Time' : 'Monthly'}
+                                                                {item.frequency === 'ITEM' ? 'Item' : item.frequency === 'ONE_TIME' ? 'One Time' : 'Monthly'}
                                                             </span>
                                                         </td>
                                                         <td>
@@ -175,6 +175,8 @@ function ViewFeeDetailsModal({ student, onClose }) {
                                                                     <br />
                                                                     <strong>₹{parseFloat(item.effectiveAmount || 0).toFixed(2)}</strong>
                                                                 </>
+                                                            ) : item.frequency === 'ITEM' ? (
+                                                                <>—</>
                                                             ) : (
                                                                 <>₹{parseFloat(item.structureAmount || 0).toFixed(2)}</>
                                                             )}

@@ -107,6 +107,12 @@ export const adminAPI = {
         api.post(`/admin/students/${encodeURIComponent(studentId)}/quick-pay`, payload),
     getPendingFeesReport: () => api.get('/admin/reports/pending-fees'),
     getFeeStructures: () => api.get('/admin/fee-structure'),
+    getItemCharges: (studentId) =>
+        api.get(`/admin/students/${encodeURIComponent(studentId)}/item-charges`),
+    createItemCharge: (studentId, payload) =>
+        api.post(`/admin/students/${encodeURIComponent(studentId)}/item-charges`, payload),
+    deleteItemCharge: (studentId, itemId) =>
+        api.delete(`/admin/students/${encodeURIComponent(studentId)}/item-charges/${encodeURIComponent(itemId)}`),
 
     // Exams
     createExam: (examData) => api.post('/admin/exams', examData),

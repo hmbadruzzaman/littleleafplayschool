@@ -11,6 +11,7 @@ const { hashPassword, generateRollNumber, generateTeacherId, successResponse, er
 const { calculatePendingFeesForStudent } = require('../utils/feeCalculations');
 const { getPendingUnits } = require('../utils/feeCalculations');
 const { allocate } = require('../utils/allocatePayment');
+const { groupItemCharges } = require('../utils/itemCharges');
 
 // Student Management
 exports.createStudent = async (req, res) => {
@@ -537,19 +538,42 @@ exports.quickPay = async (req, res) => {
         }
 
         for (const a of result.allocations) {
-            await FeeModel.create({
-                studentId: student.studentId,
-                rollNumber: student.rollNumber,
-                feeType: a.feeType,
-                amount: a.amount,
-                month: a.month || '',
-                academicYear: a.academicYear || '',
-                dueDate: a.dueDate,
-                paymentStatus: a.paymentStatus,
-                paymentMethod: a.paymentMethod,
-                paymentDate: a.paymentDate,
-                remarks: a.remarks
-            });
+            if (a.kind === 'ITEM') {
+                // Record a dated PAID income row for this item payment...
+                await FeeModel.create({
+                    studentId: student.studentId,
+                    rollNumber: student.rollNumber,
+                    feeType: 'OTHER',
+                    itemId: a.itemId,
+                    itemName: a.itemName,
+                    amount: a.amount,
+                    dueDate: a.dueDate,
+                    paymentStatus: 'PAID',
+                    paymentMethod: a.paymentMethod,
+                    paymentDate: a.paymentDate,
+                    remarks: a.remarks
+                });
+                // ...and shrink (or clear) the owed PENDING row.
+                if (a.itemRemainingAfter > 0) {
+                    await FeeModel.update(a.feeId, { amount: a.itemRemainingAfter });
+                } else {
+                    await FeeModel.delete(a.feeId);
+                }
+            } else {
+                await FeeModel.create({
+                    studentId: student.studentId,
+                    rollNumber: student.rollNumber,
+                    feeType: a.feeType,
+                    amount: a.amount,
+                    month: a.month || '',
+                    academicYear: a.academicYear || '',
+                    dueDate: a.dueDate,
+                    paymentStatus: a.paymentStatus,
+                    paymentMethod: a.paymentMethod,
+                    paymentDate: a.paymentDate,
+                    remarks: a.remarks
+                });
+            }
         }
 
         res.status(201).json(successResponse({
@@ -562,6 +586,99 @@ exports.quickPay = async (req, res) => {
     } catch (error) {
         console.error('Quick pay error:', error);
         res.status(500).json(errorResponse('Failed to record payment', error.message));
+    }
+};
+
+// List a student's item charges (books, dress, etc.), grouped by itemId
+exports.getItemCharges = async (req, res) => {
+    try {
+        const { studentId } = req.params;
+        const student = await StudentModel.findById(studentId);
+        if (!student) {
+            return res.status(404).json(errorResponse('Student not found'));
+        }
+        const fees = await FeeModel.getByStudentId(studentId);
+        res.status(200).json(successResponse({ items: groupItemCharges(fees) }, 'Item charges fetched'));
+    } catch (error) {
+        console.error('Get item charges error:', error);
+        res.status(500).json(errorResponse('Failed to fetch item charges', error.message));
+    }
+};
+
+// Add an item charge: optional dated PAID income row + optional owed PENDING row
+exports.createItemCharge = async (req, res) => {
+    try {
+        const { studentId } = req.params;
+        const itemName = (req.body.itemName || '').trim();
+        const amountPaid = parseFloat(req.body.amountPaid) || 0;
+        const amountPending = parseFloat(req.body.amountPending) || 0;
+        const paymentMethod = req.body.paymentMethod || 'CASH';
+
+        if (!itemName) {
+            return res.status(400).json(errorResponse('Item name is required'));
+        }
+        if (amountPaid <= 0 && amountPending <= 0) {
+            return res.status(400).json(errorResponse('Enter a paid and/or pending amount'));
+        }
+
+        const student = await StudentModel.findById(studentId);
+        if (!student) {
+            return res.status(404).json(errorResponse('Student not found'));
+        }
+
+        const itemId = `ITEM#${uuidv4()}`;
+        const today = new Date().toISOString().split('T')[0];
+
+        if (amountPaid > 0) {
+            await FeeModel.create({
+                studentId: student.studentId,
+                rollNumber: student.rollNumber,
+                feeType: 'OTHER',
+                itemId,
+                itemName,
+                amount: amountPaid,
+                dueDate: today,
+                paymentStatus: 'PAID',
+                paymentMethod,
+                paymentDate: today
+            });
+        }
+        if (amountPending > 0) {
+            await FeeModel.create({
+                studentId: student.studentId,
+                rollNumber: student.rollNumber,
+                feeType: 'OTHER',
+                itemId,
+                itemName,
+                amount: amountPending,
+                dueDate: today,
+                paymentStatus: 'PENDING'
+            });
+        }
+
+        res.status(201).json(successResponse({ itemId, itemName }, 'Item charge added'));
+    } catch (error) {
+        console.error('Create item charge error:', error);
+        res.status(500).json(errorResponse('Failed to add item charge', error.message));
+    }
+};
+
+// Delete an item charge (all rows sharing the itemId for this student)
+exports.deleteItemCharge = async (req, res) => {
+    try {
+        const { studentId, itemId } = req.params;
+        const fees = await FeeModel.getByStudentId(studentId);
+        const rows = fees.filter(f => f.feeType === 'OTHER' && f.itemId === itemId);
+        if (rows.length === 0) {
+            return res.status(404).json(errorResponse('Item charge not found'));
+        }
+        for (const row of rows) {
+            await FeeModel.delete(row.feeId);
+        }
+        res.status(200).json(successResponse({ itemId, deleted: rows.length }, 'Item charge deleted'));
+    } catch (error) {
+        console.error('Delete item charge error:', error);
+        res.status(500).json(errorResponse('Failed to delete item charge', error.message));
     }
 };
 

@@ -117,6 +117,14 @@ class FeeModel {
         return result.Attributes;
     }
 
+    // Delete a fee row by id
+    static async delete(feeId) {
+        await docClient.delete({
+            TableName: TABLES.FEES,
+            Key: { feeId }
+        }).promise();
+    }
+
     // Get all fees (for admin reports)
     static async getAll() {
         const params = {
