@@ -10,6 +10,16 @@ const API_URL = window.location.hostname === 'localhost'
 
 const fmt = n => '₹' + Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
 
+const FEE_TYPE_NAMES = {
+    ADMISSION_FEE: 'Admission Fee',
+    MONTHLY_FEE: 'Monthly Tuition Fee',
+    ANNUAL_FEE: 'Annual Fee',
+    EXAM_FEE: 'Exam Fee',
+    TRANSPORT_FEE: 'Transport Fee',
+    MISC: 'Miscellaneous',
+};
+const feeTypeName = t => FEE_TYPE_NAMES[t] || t;
+
 function FeesSection() {
     const [showRecord, setShowRecord]         = useState(false);
     const [showStructure, setShowStructure]   = useState(false);
@@ -27,6 +37,9 @@ function FeesSection() {
     const [pendingSearch, setPendingSearch]   = useState('');
     const [quickPayStudent, setQuickPayStudent] = useState(null);
 
+    // Fee structure templates
+    const [feeStructures, setFeeStructures]   = useState([]);
+
     useEffect(() => { fetchData(); }, []);
 
     const fetchData = async () => {
@@ -38,17 +51,19 @@ function FeesSection() {
             const todayStr   = today.toISOString().split('T')[0];
             const token      = localStorage.getItem('token');
 
-            const [monthRes, yearRes, pendingRes] = await Promise.all([
+            const [monthRes, yearRes, pendingRes, structuresRes] = await Promise.all([
                 adminAPI.getEarningsReport(monthStart, todayStr),
                 adminAPI.getEarningsReport(yearStart, todayStr),
                 fetch(`${API_URL}/admin/reports/pending-fees`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 }).then(r => r.json()),
+                adminAPI.getFeeStructures(),
             ]);
 
             setMonthEarnings(monthRes.data.data?.totalEarnings || 0);
             setTxCount(monthRes.data.data?.transactionCount || 0);
             setYearEarnings(yearRes.data.data?.totalEarnings || 0);
+            setFeeStructures(structuresRes.data.data || []);
 
             const y = yearRes.data.data || {};
             const byType = Object.fromEntries([
@@ -249,15 +264,48 @@ function FeesSection() {
                 </div>
             </div>
 
-            {/* ── Fee structure shortcut ───────────── */}
-            <div style={{ background: 'var(--cream-50)', border: '1px solid var(--border-soft)', borderRadius: 'var(--radius)', padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-                <div>
-                    <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--forest-900)' }}>Fee structure</div>
-                    <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>Define admission, tuition and misc fee templates per class.</div>
+            {/* ── Fee structure ─────────────────────── */}
+            <div style={{ background: 'var(--surface)', border: '1px solid var(--border-soft)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>
+                <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--border-soft)', background: 'var(--cream-50)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+                    <div>
+                        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 4 }}>Templates</div>
+                        <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 400, color: 'var(--forest-900)', margin: 0 }}>Fee structure</h3>
+                        <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>Amounts applied when calculating each student’s dues.</p>
+                    </div>
+                    <button onClick={() => setShowStructure(true)} className="btn btn-ghost" style={{ fontSize: 13 }}>
+                        Manage fee structure →
+                    </button>
                 </div>
-                <button onClick={() => setShowStructure(true)} className="btn btn-ghost" style={{ fontSize: 13 }}>
-                    Manage fee structure →
-                </button>
+
+                <div style={{ padding: '12px 16px' }}>
+                    {loading ? (
+                        <div style={{ padding: 24, textAlign: 'center', color: 'var(--text-muted)' }}>Loading…</div>
+                    ) : feeStructures.length === 0 ? (
+                        <div style={{ padding: 24, textAlign: 'center', color: 'var(--text-muted)' }}>
+                            No fee structures configured yet. Use “Manage fee structure” to add them.
+                        </div>
+                    ) : (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 10, padding: 8 }}>
+                            {feeStructures.map(s => (
+                                <div key={s.feeStructureId} style={{ border: '1px solid var(--border-soft)', borderRadius: 10, padding: '12px 14px', background: 'var(--cream-50)' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
+                                        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--forest-900)' }}>{feeTypeName(s.feeType)}</span>
+                                        <span style={{ fontFamily: 'var(--font-display)', fontSize: 18, color: 'var(--forest-900)' }}>{fmt(s.amount)}</span>
+                                    </div>
+                                    <div style={{ marginTop: 6 }}>
+                                        <span className="status-badge" style={{
+                                            backgroundColor: s.frequency === 'ONE_TIME' ? '#dbeafe' : '#fef3c7',
+                                            color: s.frequency === 'ONE_TIME' ? '#1e40af' : '#92400e',
+                                            fontSize: 11,
+                                        }}>
+                                            {s.frequency === 'ONE_TIME' ? 'One Time' : 'Monthly'}
+                                        </span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
             </div>
 
             {quickPayStudent && (
@@ -268,7 +316,7 @@ function FeesSection() {
                 />
             )}
             {showRecord    && <RecordFeePaymentForm onClose={() => { setShowRecord(false); fetchData(); }} onSuccess={() => { setShowRecord(false); fetchData(); }} />}
-            {showStructure && <ManageFeeStructureModal onClose={() => setShowStructure(false)} />}
+            {showStructure && <ManageFeeStructureModal onClose={() => setShowStructure(false)} onSuccess={() => fetchData()} />}
         </div>
     );
 }

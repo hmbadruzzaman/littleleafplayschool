@@ -106,6 +106,7 @@ export const adminAPI = {
     quickPay: (studentId, payload) =>
         api.post(`/admin/students/${encodeURIComponent(studentId)}/quick-pay`, payload),
     getPendingFeesReport: () => api.get('/admin/reports/pending-fees'),
+    getFeeStructures: () => api.get('/admin/fee-structure'),
 
     // Exams
     createExam: (examData) => api.post('/admin/exams', examData),
