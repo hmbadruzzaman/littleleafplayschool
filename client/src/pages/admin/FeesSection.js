@@ -24,6 +24,7 @@ function FeesSection() {
     // Pending families
     const [pendingData, setPendingData]       = useState(null);
     const [showAllPending, setShowAllPending] = useState(false);
+    const [pendingSearch, setPendingSearch]   = useState('');
     const [quickPayStudent, setQuickPayStudent] = useState(null);
 
     useEffect(() => { fetchData(); }, []);
@@ -75,7 +76,15 @@ function FeesSection() {
         ? Math.round((yearEarnings / (yearEarnings + totalPending)) * 100)
         : 0;
 
-    const displayedPending = showAllPending ? pendingStudents : pendingStudents.slice(0, 5);
+    const filteredPending = pendingStudents.filter(s => {
+        const q = pendingSearch.trim().toLowerCase();
+        if (!q) return true;
+        return (s.studentName || '').toLowerCase().includes(q)
+            || (s.rollNumber || '').toLowerCase().includes(q)
+            || (s.class || '').toLowerCase().includes(q)
+            || (s.parentName || '').toLowerCase().includes(q);
+    });
+    const displayedPending = showAllPending ? filteredPending : filteredPending.slice(0, 5);
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
@@ -166,12 +175,28 @@ function FeesSection() {
                         )}
                     </div>
 
+                    {!loading && pendingStudents.length > 0 && (
+                        <div style={{ padding: '12px 20px 0' }}>
+                            <input
+                                type="text"
+                                placeholder="Search pending families…"
+                                value={pendingSearch}
+                                onChange={e => setPendingSearch(e.target.value)}
+                                style={{ width: '100%', padding: '8px 14px', fontSize: 13, border: '1px solid var(--border-color)', borderRadius: 8, background: 'var(--surface)', color: 'var(--text)', outline: 'none' }}
+                            />
+                        </div>
+                    )}
+
                     <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 8 }}>
                         {loading ? (
                             <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading…</div>
                         ) : pendingStudents.length === 0 ? (
                             <div style={{ padding: '32px', textAlign: 'center', color: 'var(--success-color)', fontFamily: 'var(--font-display)', fontSize: 18 }}>
                                 All families are paid up ✓
+                            </div>
+                        ) : filteredPending.length === 0 ? (
+                            <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)', fontFamily: 'var(--font-display)', fontSize: 16 }}>
+                                No families match “{pendingSearch}”
                             </div>
                         ) : (
                             <>
@@ -206,10 +231,10 @@ function FeesSection() {
                                     </div>
                                 ))}
 
-                                {pendingStudents.length > 5 && (
+                                {filteredPending.length > 5 && (
                                     <button onClick={() => setShowAllPending(v => !v)}
                                         style={{ fontSize: 12, color: 'var(--moss-dark)', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', padding: '6px 0', textAlign: 'center', fontFamily: 'inherit' }}>
-                                        {showAllPending ? 'Show less ↑' : `Show all ${pendingStudents.length} families ↓`}
+                                        {showAllPending ? 'Show less ↑' : `Show all ${filteredPending.length} families ↓`}
                                     </button>
                                 )}
                             </>

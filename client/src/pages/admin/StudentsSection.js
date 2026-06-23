@@ -2,12 +2,17 @@ import React, { useEffect, useState } from 'react';
 import { adminAPI } from '../../services/api';
 import AddStudentForm from '../../components/forms/AddStudentForm';
 import StudentDetailsModal from '../../components/modals/StudentDetailsModal';
+import QuickPayModal from '../../components/modals/QuickPayModal';
+
+const fmt = n => '₹' + Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
 
 function StudentsSection() {
     const [students, setStudents]         = useState([]);
+    const [pendingMap, setPendingMap]    = useState({});
     const [loading, setLoading]           = useState(true);
     const [showAddStudent, setShowAdd]    = useState(false);
     const [selectedStudent, setSelected] = useState(null);
+    const [quickPayStudent, setQuickPay] = useState(null);
     const [searchTerm, setSearchTerm]    = useState('');
     const [showInactive, setShowInactive]= useState(false);
     const [sortField, setSortField]      = useState('rollNumber');
@@ -17,8 +22,14 @@ function StudentsSection() {
 
     const fetchStudents = async () => {
         try {
-            const res = await adminAPI.getAllStudents();
-            setStudents(res.data.data);
+            const [studentsRes, pendingRes] = await Promise.all([
+                adminAPI.getAllStudents(),
+                adminAPI.getPendingFeesReport(),
+            ]);
+            setStudents(studentsRes.data.data);
+            const map = {};
+            (pendingRes.data.data?.students || []).forEach(s => { map[s.studentId] = s.totalPending; });
+            setPendingMap(map);
         } catch (err) {
             console.error('Error fetching students:', err);
         } finally {
@@ -94,6 +105,7 @@ function StudentsSection() {
                             <SortTh field="parentName">Parent Name</SortTh>
                             <SortTh field="parentPhone">Parent Phone</SortTh>
                             <SortTh field="status">Status</SortTh>
+                            <th style={{ whiteSpace: 'nowrap' }}>Pending</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -113,6 +125,23 @@ function StudentsSection() {
                                 <td>{student.parentName}</td>
                                 <td>{student.parentPhone}</td>
                                 <td><span className={`status-badge ${student.status.toLowerCase()}`}>{student.status}</span></td>
+                                <td onClick={e => e.stopPropagation()} style={{ whiteSpace: 'nowrap' }}>
+                                    {pendingMap[student.studentId] > 0 ? (
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                            <span style={{ color: 'var(--error-color)', fontWeight: 600 }}>
+                                                {fmt(pendingMap[student.studentId])}
+                                            </span>
+                                            <button className="btn btn-primary" style={{ fontSize: 12, padding: '4px 12px' }}
+                                                onClick={() => setQuickPay(student)}>
+                                                Pay
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <span style={{ color: 'var(--text-muted)' }}>
+                                            {showInactive ? '—' : 'Paid up'}
+                                        </span>
+                                    )}
+                                </td>
                             </tr>
                         ))}
                     </tbody>
@@ -138,6 +167,13 @@ function StudentsSection() {
                     student={selectedStudent}
                     onClose={() => setSelected(null)}
                     onUpdate={() => { fetchStudents(); setSelected(null); }}
+                />
+            )}
+            {quickPayStudent && (
+                <QuickPayModal
+                    student={quickPayStudent}
+                    onClose={() => setQuickPay(null)}
+                    onSuccess={() => { setQuickPay(null); fetchStudents(); }}
                 />
             )}
         </div>
