@@ -9,7 +9,7 @@ const { docClient, TABLES } = require('../config/dynamodb');
 const { v4: uuidv4 } = require('uuid');
 const { hashPassword, generateRollNumber, generateTeacherId, successResponse, errorResponse } = require('../utils/helpers');
 const { calculatePendingFeesForStudent } = require('../utils/feeCalculations');
-const { getPendingUnits } = require('../utils/feeCalculations');
+const { getPendingUnits, computePendingForStudents } = require('../utils/feeCalculations');
 const { allocate } = require('../utils/allocatePayment');
 const { groupItemCharges } = require('../utils/itemCharges');
 
@@ -1119,16 +1119,30 @@ exports.deleteExpenditure = async (req, res) => {
 // Get total pending fees across all students
 exports.getTotalPendingFees = async (req, res) => {
     try {
-        const students = await StudentModel.getAll();
+        // Fetch the three datasets ONCE, then compute pending in memory — avoids a
+        // fee-structure scan + a fees query per student (previously O(N) sequential
+        // DB round-trips, the source of the slow page loads).
+        const [students, structuresResult, allFees] = await Promise.all([
+            StudentModel.getAll(),
+            docClient.scan({ TableName: TABLES.FEE_STRUCTURE }).promise(),
+            FeeModel.getAll()
+        ]);
         const activeStudents = students.filter(s => s.status === 'ACTIVE');
+        const feeStructures = structuresResult.Items || [];
+        const pendingByStudent = computePendingForStudents({
+            students: activeStudents,
+            feeStructures,
+            allFees: allFees || [],
+            today: new Date()
+        });
 
         let totalPending = 0;
         const studentsWithPending = [];
 
         for (const student of activeStudents) {
-            const pendingResult = await calculatePendingFeesForStudent(student);
+            const pendingResult = pendingByStudent.get(student.studentId);
 
-            if (pendingResult.totalPending > 0) {
+            if (pendingResult && pendingResult.totalPending > 0) {
                 studentsWithPending.push({
                     studentId: student.studentId,
                     studentName: student.fullName,

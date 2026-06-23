@@ -215,9 +215,38 @@ async function calculatePendingFeesForStudent(student) {
   return { studentId: student.studentId, totalPending, breakdown };
 }
 
+/**
+ * Pure batch pending calculator. Takes the three datasets ONCE (students, fee
+ * structures, and all fee rows), groups fees by studentId in memory, and computes
+ * pending per student with no I/O. Returns a Map of studentId ->
+ * { totalPending, breakdown }. Used by the all-students report to avoid making a
+ * fee-structure scan + a fees query per student (which was O(N) sequential DB calls).
+ */
+function computePendingForStudents({ students, feeStructures, allFees, today }) {
+  const now = today || new Date();
+  const feesByStudent = new Map();
+  for (const fee of allFees || []) {
+    const arr = feesByStudent.get(fee.studentId) || [];
+    arr.push(fee);
+    feesByStudent.set(fee.studentId, arr);
+  }
+  const byStudentId = new Map();
+  for (const student of students) {
+    const units = computePendingUnits({
+      student,
+      feeStructures,
+      studentFees: feesByStudent.get(student.studentId) || [],
+      today: now,
+    });
+    byStudentId.set(student.studentId, groupUnitsToBreakdown(units));
+  }
+  return byStudentId;
+}
+
 module.exports = {
   computePendingUnits,
   getPendingUnits,
   calculatePendingFeesForStudent,
   groupUnitsToBreakdown,
+  computePendingForStudents,
 };
