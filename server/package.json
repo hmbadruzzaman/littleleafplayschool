@@ -14,7 +14,8 @@
     "seed-dummy:local": "USE_LOCAL_DB=true node scripts/seed-dummy-data.js",
     "setup": "npm run create-tables && npm run seed-admin",
     "setup-with-data": "npm run create-tables && npm run seed-dummy",
-    "local": "USE_LOCAL_DB=true nodemon server.js"
+    "local": "USE_LOCAL_DB=true nodemon server.js",
+    "test": "node --test"
   },
   "keywords": [
     "playschool",

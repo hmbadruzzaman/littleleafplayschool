@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import QuickPayModal from '../../components/modals/QuickPayModal';
 
 const API_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:5001/api'
@@ -140,6 +141,7 @@ function ReportsSection() {
     const [reportLoading, setLoading]     = useState(false);
     const [reports, setReports]           = useState(null);
     const [pendingFees, setPendingFees]   = useState(null);
+    const [quickPayStudent, setQuickPayStudent] = useState(null);
     const [showPending, setShowPending]   = useState(false);
     const [activePreset, setActivePreset] = useState(DEFAULT_PRESET);
 
@@ -301,6 +303,7 @@ function ReportsSection() {
                                         <th>Parent</th>
                                         <th>Phone</th>
                                         <th>Pending Amount</th>
+                                        <th></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -314,6 +317,15 @@ function ReportsSection() {
                                             <td style={{ color: 'var(--error-color)', fontWeight: 600 }}>
                                                 {fmt(s.totalPending || 0)}
                                             </td>
+                                            <td>
+                                                <button
+                                                    onClick={() => setQuickPayStudent(s)}
+                                                    className="btn btn-primary"
+                                                    style={{ fontSize: 12, padding: '6px 12px' }}
+                                                >
+                                                    Pay
+                                                </button>
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -321,6 +333,13 @@ function ReportsSection() {
                         </div>
                     )}
                 </div>
+            )}
+            {quickPayStudent && (
+                <QuickPayModal
+                    student={quickPayStudent}
+                    onClose={() => setQuickPayStudent(null)}
+                    onSuccess={() => { setQuickPayStudent(null); handleApply(); }}
+                />
             )}
         </div>
     );

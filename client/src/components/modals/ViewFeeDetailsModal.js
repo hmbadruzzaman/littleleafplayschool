@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import './Modals.css';
+import QuickPayModal from './QuickPayModal';
 
 function ViewFeeDetailsModal({ student, onClose }) {
     const [fees, setFees] = useState([]);
     const [pendingData, setPendingData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [showQuickPay, setShowQuickPay] = useState(false);
 
     useEffect(() => {
         fetchFeeDetails();
@@ -80,8 +82,10 @@ function ViewFeeDetailsModal({ student, onClose }) {
     };
 
     const getPaidAmount = () => {
+        // Money actually received: PAID rows, plus partial payments stored as PENDING
+        // (they carry a paymentDate). Unpaid PENDING dues have no paymentDate.
         return fees
-            .filter(fee => fee.paymentStatus === 'PAID')
+            .filter(fee => fee.paymentStatus === 'PAID' || (fee.paymentStatus === 'PENDING' && fee.paymentDate))
             .reduce((sum, fee) => sum + (parseFloat(fee.amount) || 0), 0);
     };
 
@@ -267,10 +271,23 @@ function ViewFeeDetailsModal({ student, onClose }) {
                 </div>
 
                 <div className="modal-footer">
+                    {getPendingAmount() > 0 && (
+                        <button onClick={() => setShowQuickPay(true)} className="btn btn-primary">
+                            Pay ₹{getPendingAmount().toFixed(2)}
+                        </button>
+                    )}
                     <button onClick={onClose} className="btn btn-secondary">
                         Close
                     </button>
                 </div>
+
+                {showQuickPay && (
+                    <QuickPayModal
+                        student={student}
+                        onClose={() => setShowQuickPay(false)}
+                        onSuccess={() => { setShowQuickPay(false); fetchFeeDetails(); fetchPendingFees(); }}
+                    />
+                )}
             </div>
         </div>
     );

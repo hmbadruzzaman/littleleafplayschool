@@ -129,17 +129,22 @@ class FeeModel {
 
     // Get earnings report
     static async getEarningsReport(startDate, endDate) {
-        const params = {
-            TableName: TABLES.FEES,
-            FilterExpression: 'paymentStatus = :status AND paymentDate BETWEEN :startDate AND :endDate',
-            ExpressionAttributeValues: {
-                ':status': 'PAID',
-                ':startDate': startDate,
-                ':endDate': endDate
-            }
-        };
-
-        const result = await docClient.scan(params).promise();
+        // Scan the whole table and filter in JS. We deliberately avoid a
+        // FilterExpression: the local-DB shim only understands single-condition
+        // expressions, and we need to count money actually received — every fee with
+        // a paymentDate in range whose status is PAID or PENDING. Partial Quick Pay
+        // payments are stored PENDING (so their balance stays visible) but still carry
+        // a paymentDate, so they count as income; unpaid PENDING/OVERDUE dues have no
+        // paymentDate and are excluded.
+        const scanResult = await docClient.scan({ TableName: TABLES.FEES }).promise();
+        const receivedStatuses = new Set(['PAID', 'PENDING']);
+        const items = (scanResult.Items || []).filter(fee =>
+            fee.paymentDate &&
+            fee.paymentDate >= startDate &&
+            fee.paymentDate <= endDate &&
+            receivedStatuses.has(fee.paymentStatus)
+        );
+        const result = { Items: items };
 
         const report = {
             totalEarnings: 0,

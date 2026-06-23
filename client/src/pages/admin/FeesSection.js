@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { adminAPI } from '../../services/api';
 import RecordFeePaymentForm from '../../components/forms/RecordFeePaymentForm';
+import QuickPayModal from '../../components/modals/QuickPayModal';
 import ManageFeeStructureModal from '../../components/modals/ManageFeeStructureModal';
 
 const API_URL = window.location.hostname === 'localhost'
@@ -23,6 +24,7 @@ function FeesSection() {
     // Pending families
     const [pendingData, setPendingData]       = useState(null);
     const [showAllPending, setShowAllPending] = useState(false);
+    const [quickPayStudent, setQuickPayStudent] = useState(null);
 
     useEffect(() => { fetchData(); }, []);
 
@@ -194,6 +196,13 @@ function FeesSection() {
                                         <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, color: s.totalPending > 10000 ? 'var(--error-color)' : 'var(--forest-900)', flexShrink: 0, fontWeight: 500 }}>
                                             {fmt(s.totalPending)}
                                         </div>
+                                        <button
+                                            onClick={() => setQuickPayStudent(s)}
+                                            className="btn btn-primary"
+                                            style={{ fontSize: 12, padding: '6px 12px', flexShrink: 0 }}
+                                        >
+                                            Pay
+                                        </button>
                                     </div>
                                 ))}
 
@@ -226,6 +235,13 @@ function FeesSection() {
                 </button>
             </div>
 
+            {quickPayStudent && (
+                <QuickPayModal
+                    student={quickPayStudent}
+                    onClose={() => setQuickPayStudent(null)}
+                    onSuccess={() => { setQuickPayStudent(null); fetchData(); }}
+                />
+            )}
             {showRecord    && <RecordFeePaymentForm onClose={() => { setShowRecord(false); fetchData(); }} onSuccess={() => { setShowRecord(false); fetchData(); }} />}
             {showStructure && <ManageFeeStructureModal onClose={() => setShowStructure(false)} />}
         </div>

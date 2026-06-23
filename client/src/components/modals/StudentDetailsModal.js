@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import RecordFeePaymentForm from '../forms/RecordFeePaymentForm';
 import EditStudentForm from '../forms/EditStudentForm';
 import ViewFeeDetailsModal from './ViewFeeDetailsModal';
+import QuickPayModal from './QuickPayModal';
 import ViewExamResultsModal from './ViewExamResultsModal';
 import ViewAttendanceModal from './ViewAttendanceModal';
 import './Modals.css';
 
 function StudentDetailsModal({ student, onClose, onUpdate }) {
     const [showRecordPayment, setShowRecordPayment] = useState(false);
+    const [showQuickPay, setShowQuickPay] = useState(false);
     const [showEditStudent, setShowEditStudent] = useState(false);
     const [showFeeDetails, setShowFeeDetails] = useState(false);
     const [showExamResults, setShowExamResults] = useState(false);
@@ -195,6 +197,12 @@ function StudentDetailsModal({ student, onClose, onUpdate }) {
                                     💰 Record Fee Payment
                                 </button>
                                 <button
+                                    onClick={() => setShowQuickPay(true)}
+                                    className="btn btn-primary"
+                                >
+                                    ⚡ Quick Pay
+                                </button>
+                                <button
                                     className="action-btn"
                                     onClick={() => setShowFeeDetails(true)}
                                 >
@@ -256,6 +264,13 @@ function StudentDetailsModal({ student, onClose, onUpdate }) {
                     preselectedStudent={student}
                     onClose={() => setShowRecordPayment(false)}
                     onSuccess={handlePaymentSuccess}
+                />
+            )}
+            {showQuickPay && (
+                <QuickPayModal
+                    student={student}
+                    onClose={() => setShowQuickPay(false)}
+                    onSuccess={() => setShowQuickPay(false)}
                 />
             )}
             {showEditStudent && (

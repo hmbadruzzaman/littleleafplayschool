@@ -101,6 +101,10 @@ export const adminAPI = {
     // Fees
     createFee: (feeData) => api.post('/admin/fees', feeData),
     recordPayment: (feeId, paymentData) => api.put(`/admin/fees/${feeId}/payment`, paymentData),
+    quickPayPreview: (studentId, amount) =>
+        api.post(`/admin/students/${encodeURIComponent(studentId)}/quick-pay/preview`, { amount }),
+    quickPay: (studentId, payload) =>
+        api.post(`/admin/students/${encodeURIComponent(studentId)}/quick-pay`, payload),
 
     // Exams
     createExam: (examData) => api.post('/admin/exams', examData),

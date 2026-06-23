@@ -9,6 +9,8 @@ const { docClient, TABLES } = require('../config/dynamodb');
 const { v4: uuidv4 } = require('uuid');
 const { hashPassword, generateRollNumber, generateTeacherId, successResponse, errorResponse } = require('../utils/helpers');
 const { calculatePendingFeesForStudent } = require('../utils/feeCalculations');
+const { getPendingUnits } = require('../utils/feeCalculations');
+const { allocate } = require('../utils/allocatePayment');
 
 // Student Management
 exports.createStudent = async (req, res) => {
@@ -476,6 +478,90 @@ exports.calculatePendingFees = async (req, res) => {
         console.error('Calculate pending fees error:', error);
         console.error('Error stack:', error.stack);
         res.status(500).json(errorResponse('Failed to calculate pending fees', error.message));
+    }
+};
+
+// Preview a lump-sum allocation across a student's pending dues (no writes)
+exports.quickPayPreview = async (req, res) => {
+    try {
+        const { studentId } = req.params;
+        const amount = parseFloat(req.body.amount);
+        if (!amount || amount <= 0) {
+            return res.status(400).json(errorResponse('A valid amount is required'));
+        }
+        const student = await StudentModel.findById(studentId);
+        if (!student) {
+            return res.status(404).json(errorResponse('Student not found'));
+        }
+        const units = await getPendingUnits(student);
+        const result = allocate(units, amount, { rollNumber: student.rollNumber });
+        res.status(200).json(successResponse({
+            studentId: student.studentId,
+            amount,
+            totalPending: result.totalPending,
+            allocated: result.allocated,
+            leftover: result.leftover,
+            allocations: result.allocations
+        }, 'Allocation preview computed'));
+    } catch (error) {
+        console.error('Quick pay preview error:', error);
+        res.status(500).json(errorResponse('Failed to compute allocation', error.message));
+    }
+};
+
+// Commit a lump-sum payment: recompute authoritatively and write PAID fee rows
+exports.quickPay = async (req, res) => {
+    try {
+        const { studentId } = req.params;
+        const amount = parseFloat(req.body.amount);
+        const { paymentMethod, paymentDate, remarks } = req.body;
+        if (!amount || amount <= 0) {
+            return res.status(400).json(errorResponse('A valid amount is required'));
+        }
+        const student = await StudentModel.findById(studentId);
+        if (!student) {
+            return res.status(404).json(errorResponse('Student not found'));
+        }
+
+        // Recompute from scratch — never trust client-sent line items.
+        const units = await getPendingUnits(student);
+        const result = allocate(units, amount, {
+            rollNumber: student.rollNumber,
+            paymentMethod: paymentMethod || 'CASH',
+            paymentDate: paymentDate || new Date().toISOString().split('T')[0],
+            remarks: remarks || ''
+        });
+
+        if (result.allocations.length === 0) {
+            return res.status(400).json(errorResponse('No pending dues to apply this payment to'));
+        }
+
+        for (const a of result.allocations) {
+            await FeeModel.create({
+                studentId: student.studentId,
+                rollNumber: student.rollNumber,
+                feeType: a.feeType,
+                amount: a.amount,
+                month: a.month || '',
+                academicYear: a.academicYear || '',
+                dueDate: a.dueDate,
+                paymentStatus: a.paymentStatus,
+                paymentMethod: a.paymentMethod,
+                paymentDate: a.paymentDate,
+                remarks: a.remarks
+            });
+        }
+
+        res.status(201).json(successResponse({
+            studentId: student.studentId,
+            allocated: result.allocated,
+            leftover: result.leftover,
+            count: result.allocations.length,
+            allocations: result.allocations
+        }, `Recorded ${result.allocations.length} payment(s)`));
+    } catch (error) {
+        console.error('Quick pay error:', error);
+        res.status(500).json(errorResponse('Failed to record payment', error.message));
     }
 };
 
