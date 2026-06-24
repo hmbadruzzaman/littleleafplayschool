@@ -24,7 +24,8 @@ function AddStudentForm({ onClose, onSuccess }) {
         transportStartMonth: '',
         excludeAdmissionFee: false,
         monthlyFeeDiscount: 0,
-        transportFeeDiscount: 0
+        transportFeeDiscount: 0,
+        admissionFeeDiscount: 0
     });
     // Tracks whether admin has manually typed in the password field. Once they
     // have, we stop auto-syncing from fullName.
@@ -33,6 +34,13 @@ function AddStudentForm({ onClose, onSuccess }) {
     const [error, setError] = useState('');
     const [showSuccess, setShowSuccess] = useState(false);
     const [generatedRollNumber, setGeneratedRollNumber] = useState('');
+
+    const [items, setItems] = useState([]);
+
+    const addItemRow = () => setItems(prev => [...prev, { itemName: '', amountPaid: '', amountPending: '' }]);
+    const updateItemRow = (index, field, value) =>
+        setItems(prev => prev.map((row, i) => i === index ? { ...row, [field]: value } : row));
+    const removeItemRow = (index) => setItems(prev => prev.filter((_, i) => i !== index));
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -64,7 +72,16 @@ function AddStudentForm({ onClose, onSuccess }) {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify(formData)
+                body: JSON.stringify({
+                    ...formData,
+                    items: items
+                        .map(it => ({
+                            itemName: (it.itemName || '').trim(),
+                            amountPaid: parseFloat(it.amountPaid) || 0,
+                            amountPending: parseFloat(it.amountPending) || 0,
+                        }))
+                        .filter(it => it.itemName && (it.amountPaid > 0 || it.amountPending > 0)),
+                })
             });
 
             const data = await response.json();
@@ -323,6 +340,22 @@ function AddStudentForm({ onClose, onSuccess }) {
                         </div>
                     )}
 
+                    {!formData.excludeAdmissionFee && (
+                        <div className="form-group">
+                            <label>Admission Fee Discount (₹)</label>
+                            <input
+                                type="number"
+                                name="admissionFeeDiscount"
+                                min="0"
+                                value={formData.admissionFeeDiscount}
+                                onChange={handleChange}
+                            />
+                            <small style={{color: '#6b7280', fontSize: '0.85rem'}}>
+                                Flat amount subtracted from the one-time admission fee (default 0)
+                            </small>
+                        </div>
+                    )}
+
                     <div className="form-group">
                         <label>Monthly Fee Discount (₹)</label>
                         <input
@@ -352,6 +385,45 @@ function AddStudentForm({ onClose, onSuccess }) {
                             </small>
                         </div>
                     )}
+
+                    <div className="form-group">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                            <label style={{ margin: 0, fontWeight: 500 }}>Other Fees (books, dress, etc.)</label>
+                            <button type="button" className="btn btn-secondary" style={{ fontSize: 13 }} onClick={addItemRow}>
+                                + Add item
+                            </button>
+                        </div>
+                        <small style={{ color: '#6b7280', fontSize: '0.85rem', display: 'block', marginBottom: 10 }}>
+                            Optional one-off charges. Pending amounts roll into the student’s dues and are payable via Quick Pay.
+                        </small>
+                        {items.map((row, index) => (
+                            <div key={index} className="form-row" style={{ alignItems: 'flex-end', gap: 8, marginBottom: 8 }}>
+                                <div className="form-group" style={{ flex: 2 }}>
+                                    <label>Item Name</label>
+                                    <input type="text" value={row.itemName}
+                                        onChange={e => updateItemRow(index, 'itemName', e.target.value)}
+                                        placeholder="e.g., Books, Dress" />
+                                </div>
+                                <div className="form-group" style={{ flex: 1 }}>
+                                    <label>Paid (₹)</label>
+                                    <input type="number" min="0" step="0.01" value={row.amountPaid}
+                                        onChange={e => updateItemRow(index, 'amountPaid', e.target.value)}
+                                        placeholder="0" />
+                                </div>
+                                <div className="form-group" style={{ flex: 1 }}>
+                                    <label>Pending (₹)</label>
+                                    <input type="number" min="0" step="0.01" value={row.amountPending}
+                                        onChange={e => updateItemRow(index, 'amountPending', e.target.value)}
+                                        placeholder="0" />
+                                </div>
+                                <button type="button" onClick={() => removeItemRow(index)}
+                                    className="btn btn-danger"
+                                    style={{ background: '#ef4444', color: 'white', border: 'none', marginBottom: 16 }}>
+                                    ×
+                                </button>
+                            </div>
+                        ))}
+                    </div>
 
                     <div className="form-actions">
                         <button type="button" onClick={onClose} className="btn btn-secondary">

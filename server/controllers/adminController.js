@@ -16,7 +16,7 @@ const { groupItemCharges } = require('../utils/itemCharges');
 // Student Management
 exports.createStudent = async (req, res) => {
     try {
-        const { fullName, dateOfBirth, parentName, parentPhone, parentEmail, address, class: className, password, transportEnabled, transportStartMonth, admissionDate } = req.body;
+        const { fullName, dateOfBirth, parentName, parentPhone, parentEmail, address, class: className, password, transportEnabled, transportStartMonth, admissionDate, items } = req.body;
 
         if (!fullName || !parentPhone || !className || !password) {
             return res.status(400).json(errorResponse('Missing required fields'));
@@ -60,10 +60,27 @@ exports.createStudent = async (req, res) => {
         // Add excludeAdmissionFee field
         studentData.excludeAdmissionFee = req.body.excludeAdmissionFee || false;
 
+        // Persist per-student fee discounts (flat ₹). Previously dropped at creation.
+        studentData.monthlyFeeDiscount = parseFloat(req.body.monthlyFeeDiscount) || 0;
+        studentData.transportFeeDiscount = parseFloat(req.body.transportFeeDiscount) || 0;
+        studentData.admissionFeeDiscount = parseFloat(req.body.admissionFeeDiscount) || 0;
+
         // Store plain password for admin reference
         studentData.plainPassword = password;
 
         const student = await StudentModel.create(studentData);
+
+        // Capture "Other Fees" (ad-hoc item charges) supplied at creation time.
+        if (Array.isArray(items)) {
+            for (const it of items) {
+                const itemName = (it.itemName || '').trim();
+                const amountPaid = parseFloat(it.amountPaid) || 0;
+                const amountPending = parseFloat(it.amountPending) || 0;
+                if (itemName && (amountPaid > 0 || amountPending > 0)) {
+                    await createItemChargeRows(student, { itemName, amountPaid, amountPending });
+                }
+            }
+        }
 
         res.status(201).json(successResponse({ user, student, rollNumber }, `Student created successfully with roll number: ${rollNumber}`));
     } catch (error) {
@@ -589,6 +606,41 @@ exports.quickPay = async (req, res) => {
     }
 };
 
+// Create the FEES rows for one ad-hoc item charge: a dated PAID income row (if any
+// amount was paid) and a PENDING owed row (if any amount is still owed), sharing one
+// itemId. Returns the itemId.
+async function createItemChargeRows(student, { itemName, amountPaid = 0, amountPending = 0, paymentMethod = 'CASH' }) {
+    const itemId = `ITEM#${uuidv4()}`;
+    const today = new Date().toISOString().split('T')[0];
+    if (amountPaid > 0) {
+        await FeeModel.create({
+            studentId: student.studentId,
+            rollNumber: student.rollNumber,
+            feeType: 'OTHER',
+            itemId,
+            itemName,
+            amount: amountPaid,
+            dueDate: today,
+            paymentStatus: 'PAID',
+            paymentMethod,
+            paymentDate: today
+        });
+    }
+    if (amountPending > 0) {
+        await FeeModel.create({
+            studentId: student.studentId,
+            rollNumber: student.rollNumber,
+            feeType: 'OTHER',
+            itemId,
+            itemName,
+            amount: amountPending,
+            dueDate: today,
+            paymentStatus: 'PENDING'
+        });
+    }
+    return itemId;
+}
+
 // List a student's item charges (books, dress, etc.), grouped by itemId
 exports.getItemCharges = async (req, res) => {
     try {
@@ -626,35 +678,7 @@ exports.createItemCharge = async (req, res) => {
             return res.status(404).json(errorResponse('Student not found'));
         }
 
-        const itemId = `ITEM#${uuidv4()}`;
-        const today = new Date().toISOString().split('T')[0];
-
-        if (amountPaid > 0) {
-            await FeeModel.create({
-                studentId: student.studentId,
-                rollNumber: student.rollNumber,
-                feeType: 'OTHER',
-                itemId,
-                itemName,
-                amount: amountPaid,
-                dueDate: today,
-                paymentStatus: 'PAID',
-                paymentMethod,
-                paymentDate: today
-            });
-        }
-        if (amountPending > 0) {
-            await FeeModel.create({
-                studentId: student.studentId,
-                rollNumber: student.rollNumber,
-                feeType: 'OTHER',
-                itemId,
-                itemName,
-                amount: amountPending,
-                dueDate: today,
-                paymentStatus: 'PENDING'
-            });
-        }
+        const itemId = await createItemChargeRows(student, { itemName, amountPaid, amountPending, paymentMethod });
 
         res.status(201).json(successResponse({ itemId, itemName }, 'Item charge added'));
     } catch (error) {

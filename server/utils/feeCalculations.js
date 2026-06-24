@@ -47,7 +47,12 @@ function computePendingUnits({ student, feeStructures, studentFees, today }) {
         .reduce((s, f) => s + (parseFloat(f.amount) || 0), 0);
       const pending = typeFees.filter(f => f.paymentStatus === 'PENDING')
         .reduce((s, f) => s + (parseFloat(f.amount) || 0), 0);
-      const remaining = hasPaid ? 0 : Math.max(0, structure.amount - pending);
+      // Flat per-student discount on the admission fee (other one-time fees take none).
+      const oneTimeDiscount = structure.feeType === 'ADMISSION_FEE'
+        ? (parseFloat(student.admissionFeeDiscount) || 0)
+        : 0;
+      const oneTimeEffective = Math.max(0, structure.amount - oneTimeDiscount);
+      const remaining = hasPaid ? 0 : Math.max(0, oneTimeEffective - pending);
 
       if (remaining > 0) {
         oneTimeUnits.push({
@@ -57,8 +62,8 @@ function computePendingUnits({ student, feeStructures, studentFees, today }) {
           year: null,
           academicYear: null,
           structureAmount: structure.amount,
-          discount: 0,
-          effectiveAmount: structure.amount,
+          discount: oneTimeDiscount,
+          effectiveAmount: oneTimeEffective,
           paidAmount: paid,
           remaining,
           label: prettyFeeType(structure.feeType),
@@ -186,6 +191,8 @@ function groupUnitsToBreakdown(units) {
       oneTime.push({
         feeType: u.feeType,
         structureAmount: u.structureAmount,
+        discount: u.discount,
+        effectiveAmount: u.effectiveAmount,
         pendingAmount: u.remaining,
         paidAmount: u.paidAmount,
         frequency: 'ONE_TIME',

@@ -163,3 +163,33 @@ test('ITEM unit carries kind, feeId and label', () => {
   assert.strictEqual(item.label, 'Lab kit');
   assert.strictEqual(item.remaining, 700);
 });
+
+test('admission fee discount lowers the one-time admission remaining', () => {
+  const units = computePendingUnits({
+    student: baseStudent({ admissionFeeDiscount: 500 }),
+    feeStructures: STRUCTURES,
+    studentFees: [],
+    today: TODAY,
+  });
+  const adm = units.find(u => u.feeType === 'ADMISSION_FEE');
+  assert.strictEqual(adm.discount, 500);
+  assert.strictEqual(adm.effectiveAmount, 1500);
+  assert.strictEqual(adm.remaining, 1500);
+});
+
+test('admission discount does not affect other one-time fees and never goes negative', () => {
+  const units = computePendingUnits({
+    student: baseStudent({ admissionFeeDiscount: 99999 }),
+    feeStructures: [
+      ...STRUCTURES,
+      { feeStructureId: 'FEE_STRUCTURE#ANNUAL_FEE', feeType: 'ANNUAL_FEE', amount: 1200, frequency: 'ONE_TIME' },
+    ],
+    studentFees: [],
+    today: TODAY,
+  });
+  const adm = units.find(u => u.feeType === 'ADMISSION_FEE');
+  const annual = units.find(u => u.feeType === 'ANNUAL_FEE');
+  assert.strictEqual(adm, undefined); // discount >= amount -> nothing pending
+  assert.strictEqual(annual.discount, 0);
+  assert.strictEqual(annual.remaining, 1200);
+});
